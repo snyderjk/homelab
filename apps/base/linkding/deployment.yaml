@@ -32,7 +32,7 @@ spec:
             - name: linkding-data
               mountPath: /data
               subPath: data/staging/linkding
-          volumes:
-            - name: linkding-data
-              persistentVolumeClaim:
-                claimName: linkding-pvc
+      volumes:
+        - name: linkding-data
+          persistentVolumeClaim:
+            claimName: linkding-pvc
