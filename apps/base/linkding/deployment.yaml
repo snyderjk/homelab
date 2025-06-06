@@ -12,8 +12,27 @@ spec:
       labels:
         app: linkding
     spec:
+      initContainers:
+        - name: init-nfs-subdir
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /nfs/data/staging/linkding && \
+          volumeMounts:
+            - name: linkding-data
+              mountPath: /nfs
       containers:
         - name: linkding
           image: sissbruecker/linkding:1.40.0
           ports:
             - containerPort: 9090
+          volumeMounts:
+            - name: linkding-data
+              mountPath: /data
+              subPath: data/staging/linkding
+          volumes:
+            - name: linkding-data
+              persistentVolumeClaim:
+                claimName: linkding-pvc
