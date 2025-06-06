@@ -1,3 +1,2 @@
 resources:
   - pv-nfs.yaml
-  - pvc-nfs.yaml
