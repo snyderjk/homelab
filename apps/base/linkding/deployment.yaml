@@ -16,6 +16,13 @@ spec:
         fsGroup: 33
         runAsUser: 33
         runAsGroup: 33
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          command: ["sh", "-c", "chown -R 33:33 /etc/linkding/data"]
+          volumeMounts:
+            - name: linkding-data
+              mountPath: /etc/linkding/data
       containers:
         - name: linkding
           image: sissbruecker/linkding:1.40.0
