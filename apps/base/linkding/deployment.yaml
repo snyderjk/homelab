@@ -16,17 +16,6 @@ spec:
         fsGroup: 33
         runAsUser: 33
         runAsGroup: 33
-      initContainers:
-        - name: init-nfs-subdir
-          image: busybox
-          command:
-            - sh
-            - -c
-            - |
-              mkdir -p /nfs/data/staging/linkding
-          volumeMounts:
-            - name: linkding-data
-              mountPath: /nfs
       containers:
         - name: linkding
           image: sissbruecker/linkding:1.40.0
