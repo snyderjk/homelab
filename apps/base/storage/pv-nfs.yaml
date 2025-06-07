@@ -11,3 +11,10 @@ spec:
     path: /volume1/k8s-storage
     server: 10.17.1.5
   persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=4
+    - hard
+    - rsize=131072
+    - wsize=131072
+    - timeo=600
+    - retrans=2
