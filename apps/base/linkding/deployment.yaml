@@ -12,6 +12,10 @@ spec:
       labels:
         app: linkding
     spec:
+      securityContext:
+        fsGroup: 33
+        runAsUser: 33
+        runAsGroup: 33
       initContainers:
         - name: init-nfs-subdir
           image: busybox
@@ -28,6 +32,8 @@ spec:
           image: sissbruecker/linkding:1.40.0
           ports:
             - containerPort: 9090
+          securityContext:
+            allowPrivelegeEscalation: false
           volumeMounts:
             - name: linkding-data
               mountPath: /etc/linkding/data
