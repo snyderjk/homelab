@@ -19,7 +19,7 @@ spec:
             - sh
             - -c
             - |
-              mkdir -p /nfs/data/staging/linkding && \
+              mkdir -p /nfs/data/staging/linkding
           volumeMounts:
             - name: linkding-data
               mountPath: /nfs
