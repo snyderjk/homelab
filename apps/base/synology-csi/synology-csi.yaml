@@ -98,16 +98,6 @@ spec:
           env:
             - name: CSI_ENDPOINT
               value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
-            - name: SYNOLOGY_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: synology-csi-auth
-                  key: username
-            - name: SYNOLOGY_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: synology-csi-auth
-                  key: password
           image: synology/synology-csi:v1.2.0
           imagePullPolicy: IfNotPresent
           name: csi-plugin
@@ -120,12 +110,12 @@ spec:
             privileged: true
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
-          volumeMounts:
-            - mountPath: /var/lib/csi/sockets/pluginproxy/
+          volumemounts:
+            - mountpath: /var/lib/csi/sockets/pluginproxy/
               name: socket-dir
-            - mountPath: /etc/synology
+            - mountpath: /etc/synology
               name: client-info
-              readOnly: true
+              readonly: true
       dnsPolicy: ClusterFirst
       hostNetwork: true
       restartPolicy: Always
