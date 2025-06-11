@@ -98,6 +98,16 @@ spec:
           env:
             - name: CSI_ENDPOINT
               value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
+            - name: SYNOLOGY_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: synology-csi-auth
+                  key: username
+            - name: SYNOLOGY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: synology-csi-auth
+                  key: password
           image: synology/synology-csi:v1.2.0
           imagePullPolicy: IfNotPresent
           name: csi-plugin
