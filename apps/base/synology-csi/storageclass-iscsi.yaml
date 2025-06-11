@@ -9,7 +9,7 @@ parameters:
   dsm: "10.17.1.5"
   protocol: "iscsi"
   location: "/volume2"
-  fsType: "ext4"
+  fsType: "btrfs"
 reclaimPolicy: Retain
 allowVolumeExpansion: true
 volumeBindingMode: Immediate
