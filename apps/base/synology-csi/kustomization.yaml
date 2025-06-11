@@ -3,4 +3,4 @@ kind: Kustomization
 resources:
   - storageclass-iscsi.yaml
   - synology-csi.yaml
-  - synology-secret.yaml
+  # - synology-secret.yaml
