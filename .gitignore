@@ -1,2 +1,7 @@
 *.retry
 .ansible/
+
+#SOPS keys
+.keys/
+*.key
+*age.key
