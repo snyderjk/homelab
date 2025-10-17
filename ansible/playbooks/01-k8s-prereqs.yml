@@ -1,0 +1,125 @@
+---
+- name: Install containerd
+  hosts: k8s_cluster
+  become: true
+  tasks:
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Install containerd
+      apt:
+        name: containerd.io
+        state: present
+        update_cache: yes
+
+    - name: Create containerd config directory
+      file:
+        path: /etc/containerd
+        state: directory
+        mode: "0755"
+
+    - name: Generate default containerd config
+      shell: containerd config default > /etc/containerd/config.toml
+      args:
+        creates: /etc/containerd/config.toml
+
+    - name: Configure containerd to use systemd cgroup driver
+      lineinfile:
+        path: /etc/containerd/config.toml
+        regexp: '^\s+SystemdCgroup = false'
+        line: "            SystemdCgroup = true"
+        state: present
+
+    - name: Restart containerd
+      systemd:
+        name: containerd
+        state: restarted
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Verify containerd is running
+      systemd:
+        name: containerd
+        state: started
+      register: containerd_status
+
+    - name: Show containerd status
+      debug:
+        msg: "containerd is {{ containerd_status.status.ActiveState }}"
+
+- name: Install Kubernetes tools
+  hosts: k8s_cluster
+  become: true
+  tasks:
+    - name: Add Kubernetes GPG key
+      apt_key:
+        url: https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/Release.key
+        state: present
+        keyring: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+    - name: Add Kubernetes repository
+      apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/ /"
+        state: present
+        filename: kubernetes
+
+    - name: Install Kubernetes packages
+      apt:
+        name:
+          - kubelet={{ kubernetes_version }}
+          - kubeadm={{ kubernetes_version }}
+          - kubectl={{ kubernetes_version }}
+        state: present
+        update_cache: yes
+
+    - name: Hold Kubernetes packages at current version
+      dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+      loop:
+        - kubelet
+        - kubeadm
+        - kubectl
+
+    - name: Enable kubelet service
+      systemd:
+        name: kubelet
+        enabled: yes
+
+    - name: Create kubelet service directory
+      file:
+        path: /etc/systemd/system/kubelet.service.d
+        state: directory
+        mode: "0755"
+
+    - name: Verify installations
+      shell: |
+        case "{{ item }}" in
+          kubeadm)
+            kubeadm version -o short
+            ;;
+          kubelet)
+            kubelet --version
+            ;;
+          kubectl)
+            kubectl version --client -o yaml | grep gitVersion
+            ;;
+        esac
+      loop:
+        - kubeadm
+        - kubelet
+        - kubectl
+      register: version_check
+      changed_when: false
+
+    - name: Show installed versions
+      debug:
+        msg: "{{ item.stdout }}"
+      loop: "{{ version_check.results }}"

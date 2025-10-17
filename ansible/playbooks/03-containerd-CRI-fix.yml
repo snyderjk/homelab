@@ -1,0 +1,51 @@
+- name: Fix containerd CRI plugin
+  hosts: k8s_cluster
+  become: true
+  tasks:
+    - name: Stop containerd
+      systemd:
+        name: containerd
+        state: stopped
+
+    - name: Backup existing config
+      copy:
+        src: /etc/containerd/config.toml
+        dest: /etc/containerd/config.toml.backup
+        remote_src: yes
+      ignore_errors: true
+
+    - name: Generate fresh containerd config
+      shell: containerd config default > /etc/containerd/config.toml
+
+    - name: Enable systemd cgroup driver
+      lineinfile:
+        path: /etc/containerd/config.toml
+        regexp: '^\s+SystemdCgroup = false'
+        line: "            SystemdCgroup = true"
+        state: present
+
+    - name: Verify CRI is not disabled
+      lineinfile:
+        path: /etc/containerd/config.toml
+        regexp: '^\s*disabled_plugins.*cri'
+        state: absent
+
+    - name: Start containerd
+      systemd:
+        name: containerd
+        state: started
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Wait for containerd to be ready
+      wait_for:
+        timeout: 10
+
+    - name: Verify CRI endpoint
+      command: crictl --runtime-endpoint unix:///var/run/containerd/containerd.sock version
+      register: crictl_version
+      changed_when: false
+
+    - name: Show CRI version
+      debug:
+        var: crictl_version.stdout_lines

@@ -1,0 +1,1 @@
+kubeadm join 10.77.1.10:6443 --token clr625.of4qekja7mqposqt --discovery-token-ca-cert-hash sha256:96ae800fe90c7147cf47cd8ff0c76c7268d239f01280760be702e92b99d07347

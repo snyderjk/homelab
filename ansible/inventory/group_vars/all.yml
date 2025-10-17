@@ -1,0 +1,24 @@
+---
+# System Settings
+timezone: "America/Chicago"
+
+# Kubernetes Settings
+kubernetes_version: "1.34.1-1.1"
+containerd_version: latest
+
+# Container Runtime
+containerd_config_dir: "/etc/containerd"
+kubelet_config_dir: "/var/lib/kubelet"
+
+# Network Settings
+cluster_dns: "10.96.0.10"
+
+# NFS Settings
+nfs_mount_options: "vers=4,soft,timeo=300,retrans=3,rsize=1048576,wsize=1048587"
+
+# Critical hosts
+critical_hosts:
+  - ip: "10.77.1.10"
+    hostname: "k8s-cp01"
+  - ip: "10.17.1.5"
+    hostname: "file"

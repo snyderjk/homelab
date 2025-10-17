@@ -1,0 +1,46 @@
+- name: Full cluster reset
+  hosts: k8s_cluster
+  become: true
+  tasks:
+    - name: Stop kubelet
+      systemd:
+        name: kubelet
+        state: stopped
+      ignore_errors: true
+
+    - name: Run kubeadm reset
+      command: kubeadm reset -f
+      ignore_errors: true
+
+    - name: Find and unmount kubelet mounts
+      shell: |
+        for mount in $(mount | grep '/var/lib/kubelet' | awk '{print $3}' | sort -r); do
+          umount $mount 2>/dev/null || true
+        done
+      ignore_errors: true
+
+    - name: Remove Kubernetes directories
+      shell: |
+        rm -rf /etc/kubernetes
+        rm -rf /var/lib/kubelet
+        rm -rf /var/lib/etcd
+        rm -rf /etc/cni/net.d
+        rm -rf ~/.kube
+      ignore_errors: true
+
+    - name: Remove iptables rules
+      shell: |
+        iptables -F
+        iptables -t nat -F
+        iptables -t mangle -F
+        iptables -X
+      ignore_errors: true
+
+    - name: Restart containerd
+      systemd:
+        name: containerd
+        state: restarted
+
+    - name: Show cleanup complete
+      debug:
+        msg: "Node reset complete"

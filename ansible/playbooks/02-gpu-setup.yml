@@ -1,0 +1,99 @@
+---
+- name: Install NVIDIA drivers and container toolkit
+  hosts: gpu_workers
+  become: true
+
+  vars:
+    nvidia_keyring_path: /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+
+  tasks:
+    - name: Check Ubuntu version
+      ansible.builtin.shell: lsb_release -rs
+      register: ubuntu_version
+      changed_when: false
+
+    - name: Install prerequisites for NVIDIA
+      ansible.builtin.apt:
+        name:
+          - software-properties-common
+          - ubuntu-drivers-common
+          - curl
+          - gpg
+        state: present
+        update_cache: yes
+
+    - name: Add ubuntu-drivers PPA
+      ansible.builtin.apt_repository:
+        repo: ppa:graphics-drivers/ppa
+        state: present
+
+    - name: Update apt cache after PPA
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Install NVIDIA driver (auto-detect best version)
+      ansible.builtin.shell: ubuntu-drivers install --gpgpu
+      args:
+        creates: /usr/bin/nvidia-smi
+
+    - name: Get architecture
+      ansible.builtin.command: dpkg --print-architecture
+      register: deb_arch
+      changed_when: false
+
+    # === NVIDIA Container Toolkit repo (correct layout) ===
+    - name: Download and install NVIDIA repo GPG keyring
+      ansible.builtin.shell: |
+        set -euo pipefail
+        curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey \
+        | gpg --dearmor -o {{ nvidia_keyring_path }}
+      args:
+        creates: "{{ nvidia_keyring_path }}"
+        executable: /bin/bash # <— make /bin/bash handle pipefail
+
+    - name: Add NVIDIA Container Toolkit repository (new deb layout)
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by={{ nvidia_keyring_path }}] https://nvidia.github.io/libnvidia-container/stable/deb/{{ deb_arch.stdout }} /"
+        state: present
+        filename: nvidia-container-toolkit
+
+    - name: (Optional) enable experimental repo entries
+      ansible.builtin.lineinfile:
+        path: /etc/apt/sources.list.d/nvidia-container-toolkit.list
+        regexp: "^# deb .*/experimental/.*$"
+        line: '\g<0>'
+        backrefs: yes
+      when: false # set to true if you really need experimental
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Install NVIDIA container toolkit
+      ansible.builtin.apt:
+        name:
+          - nvidia-container-toolkit
+          - nvidia-container-toolkit-base
+          - libnvidia-container-tools
+          - libnvidia-container1
+        state: present
+
+    - name: Configure containerd for NVIDIA runtime
+      ansible.builtin.shell: nvidia-ctk runtime configure --runtime=containerd
+      notify: restart containerd
+
+    - name: Check if reboot is required
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: Show reboot message if needed
+      ansible.builtin.debug:
+        msg: "REBOOT REQUIRED - NVIDIA driver installed. Run: ansible gpu_workers -b -a 'reboot'"
+      when: reboot_required.stat.exists
+
+  handlers:
+    - name: restart containerd
+      ansible.builtin.systemd:
+        name: containerd
+        state: restarted

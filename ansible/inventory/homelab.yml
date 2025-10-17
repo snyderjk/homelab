@@ -1,0 +1,47 @@
+all:
+  vars:
+    ansible_user: jason
+    ansible_python_interpreter: /usr/bin/python3
+
+    # Kubernetes version to install
+    k8s_version: "1.34"
+
+    # Network Configuration
+    pod_network_cir: "10.244.0.0/16"
+    service_cidr: "10.96.0.0/12"
+
+    #Nas Configuration
+    nas_ip: "10.17.1.5"
+
+  children:
+    control_plane:
+      hosts:
+        k8s-cp01:
+          ansible_host: 10.77.1.10
+          node_role: control-plane
+
+    workers:
+      hosts:
+        k8s-worker01:
+          ansible_host: 10.77.1.11
+          node_role: worker
+        k8s-worker02:
+          ansible_host: 10.77.1.12
+          node_role: worker
+        k8s-worker03:
+          ansible_host: 10.77.1.13
+          node_role: worker
+
+    gpu_workers:
+      hosts:
+        k8s-gpu01:
+          ansible_host: 10.77.1.14
+          node_role: gpu_worker
+          gpu_type: nvidia
+
+    # Logical groupings
+    k8s_cluster:
+      children:
+        control_plane:
+        workers:
+        gpu_workers:
