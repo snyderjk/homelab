@@ -4,7 +4,7 @@
 [preflight] Pulling images required for setting up a Kubernetes cluster
 [preflight] This might take a minute or two, depending on the speed of your internet connection
 [preflight] You can also perform this action beforehand using 'kubeadm config images pull'
-W1016 08:53:34.223051  134822 checks.go:830] detected that the sandbox image "registry.k8s.io/pause:3.8" of the container runtime is inconsistent with that used by kubeadm. It is recommended to use "registry.k8s.io/pause:3.10.1" as the CRI sandbox image.
+W1020 15:31:19.225210  155357 checks.go:830] detected that the sandbox image "registry.k8s.io/pause:3.8" of the container runtime is inconsistent with that used by kubeadm. It is recommended to use "registry.k8s.io/pause:3.10.1" as the CRI sandbox image.
 [certs] Using certificateDir folder "/etc/kubernetes/pki"
 [certs] Generating "ca" certificate and key
 [certs] Generating "apiserver" certificate and key
@@ -38,22 +38,22 @@ W1016 08:53:34.223051  134822 checks.go:830] detected that the sandbox image "re
 [kubelet-start] Starting the kubelet
 [wait-control-plane] Waiting for the kubelet to boot up the control plane as static Pods from directory "/etc/kubernetes/manifests"
 [kubelet-check] Waiting for a healthy kubelet at http://127.0.0.1:10248/healthz. This can take up to 4m0s
-[kubelet-check] The kubelet is healthy after 502.203033ms
+[kubelet-check] The kubelet is healthy after 1.001842567s
 [control-plane-check] Waiting for healthy control plane components. This can take up to 4m0s
 [control-plane-check] Checking kube-apiserver at https://10.77.1.10:6443/livez
 [control-plane-check] Checking kube-controller-manager at https://127.0.0.1:10257/healthz
 [control-plane-check] Checking kube-scheduler at https://127.0.0.1:10259/livez
-[control-plane-check] kube-controller-manager is healthy after 1.002369467s
-[control-plane-check] kube-scheduler is healthy after 1.460880551s
-[control-plane-check] kube-apiserver is healthy after 3.002840075s
+[control-plane-check] kube-controller-manager is healthy after 1.003494118s
+[control-plane-check] kube-scheduler is healthy after 1.279796408s
+[control-plane-check] kube-apiserver is healthy after 3.002295142s
 [upload-config] Storing the configuration used in ConfigMap "kubeadm-config" in the "kube-system" Namespace
 [kubelet] Creating a ConfigMap "kubelet-config" in namespace kube-system with the configuration for the kubelets in the cluster
 [upload-certs] Storing the certificates in Secret "kubeadm-certs" in the "kube-system" Namespace
 [upload-certs] Using certificate key:
-7895d6b9e2f5004bcb6931a9e3d5438758e7248bd8470f9158edaafb248f3425
+80b8dd251e8c474068d03cffb145ea587df64edac0334e60be9e9f2b7dee53d3
 [mark-control-plane] Marking the node k8s-cp01 as control-plane by adding the labels: [node-role.kubernetes.io/control-plane node.kubernetes.io/exclude-from-external-load-balancers]
 [mark-control-plane] Marking the node k8s-cp01 as control-plane by adding the taints [node-role.kubernetes.io/control-plane:NoSchedule]
-[bootstrap-token] Using token: clr625.of4qekja7mqposqt
+[bootstrap-token] Using token: ff7csw.gbm2zx29ptafr8c9
 [bootstrap-token] Configuring bootstrap tokens, cluster-info ConfigMap, RBAC Roles
 [bootstrap-token] Configured RBAC rules to allow Node Bootstrap tokens to get nodes
 [bootstrap-token] Configured RBAC rules to allow Node Bootstrap tokens to post CSRs in order for nodes to get long term certificate credentials
@@ -82,9 +82,9 @@ Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
 
 You can now join any number of control-plane nodes running the following command on each as root:
 
-  kubeadm join 10.77.1.10:6443 --token clr625.of4qekja7mqposqt \
-	--discovery-token-ca-cert-hash sha256:96ae800fe90c7147cf47cd8ff0c76c7268d239f01280760be702e92b99d07347 \
-	--control-plane --certificate-key 7895d6b9e2f5004bcb6931a9e3d5438758e7248bd8470f9158edaafb248f3425
+  kubeadm join 10.77.1.10:6443 --token ff7csw.gbm2zx29ptafr8c9 \
+	--discovery-token-ca-cert-hash sha256:00e53d1712fe3ade982e5c9cf8327e6862a5a40108db3b43ae565508303592ef \
+	--control-plane --certificate-key 80b8dd251e8c474068d03cffb145ea587df64edac0334e60be9e9f2b7dee53d3
 
 Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
 As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use
@@ -92,5 +92,5 @@ As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you c
 
 Then you can join any number of worker nodes by running the following on each as root:
 
-kubeadm join 10.77.1.10:6443 --token clr625.of4qekja7mqposqt \
-	--discovery-token-ca-cert-hash sha256:96ae800fe90c7147cf47cd8ff0c76c7268d239f01280760be702e92b99d07347 
+kubeadm join 10.77.1.10:6443 --token ff7csw.gbm2zx29ptafr8c9 \
+	--discovery-token-ca-cert-hash sha256:00e53d1712fe3ade982e5c9cf8327e6862a5a40108db3b43ae565508303592ef 

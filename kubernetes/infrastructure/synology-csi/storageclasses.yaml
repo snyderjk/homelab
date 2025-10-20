@@ -1,0 +1,11 @@
+        {"allowVolumeExpansion":true,"apiVersion":"storage.k8s.io/v1","kind":"StorageClass","metadata":{"annotations":{},"name":"synology-iscsi-storage"},"provisioner":"csi.san.synology.com","reclaimPolicy":"Retain"}
+    creationTimestamp: "2025-10-18T15:18:57Z"
+    name: synology-iscsi-storage
+    resourceVersion: "335446"
+    uid: f606835e-2282-43a0-a519-192c7b77f07b
+  provisioner: csi.san.synology.com
+  reclaimPolicy: Retain
+  volumeBindingMode: Immediate
+kind: List
+metadata:
+  resourceVersion: ""

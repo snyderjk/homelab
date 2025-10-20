@@ -37,6 +37,7 @@
 - name: Verify all nodes joined
   hosts: localhost
   gather_facts: false
+
   tasks:
     - name: Wait for nodes to appear in cluster
       shell: kubectl get nodes --no-headers | wc -l

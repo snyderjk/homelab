@@ -12,7 +12,7 @@ echo ""
 echo "=== Waiting for Calico pods to be ready ==="
 echo "This may take 1-2 minutes..."
 
-kubectl wait --for=condition=ready pod -l k8s-app=calico-node -n calico-system --timeout=300s
+kubectl wait --for=condition=ready pod -l k8s-app=calico-node -n kube-system --timeout=300s
 
 echo ""
 echo "=== Verify control plane is Ready ==="

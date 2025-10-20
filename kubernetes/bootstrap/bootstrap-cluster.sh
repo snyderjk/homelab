@@ -1,48 +1,67 @@
 #!/bin/bash
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+script_dir="$(cd "$(dirname "${bash_source[0]}")" && pwd)"
+
+# Setup Work
+cd ../../ansible
+ansible-playbook playbooks/00-bootstrap.yml -k -K
+ansible-playbook playbooks/01-k8s-prereqs.yml -k -K
+ansible-playbook playbooks/02-gpu-setup.yml -k -K
+ansible-playbook playbooks/03-containerd-CRI-fix.yml -k -K
 
 echo "=========================================="
-echo "Kubernetes Homelab Cluster Bootstrap"
+echo "kubernetes homelab cluster bootstrap"
 echo "=========================================="
 echo ""
 
-# Step 1: Initialize control plane
-echo "Step 1/4: Initializing control plane..."
+cd "$script_dir"
+
+# step 1: initialize control plane
+echo "step 1/4: initializing control plane..."
 ./init-cluster.sh
 
 echo ""
-read -p "Control plane initialized. Press Enter to install CNI..."
+read -p "control plane initialized. press enter to install cni..."
 
-# Extract join command
-# need to correct the join-command.txt to only have the non --contral plan flag
-# and move command onto a single line
-K8S_JOIN_CMD=$(grep "kubeadm join" join-command.txt | sed 's/^[[:space:]]*//')
+# clean up extra newlines in join-command
+sed -i 's/\r$//' join-command.txt
 
-# Step 2: Install Calico
+# extract join command
+k8s_join_cmd=$(awk '
+/^kubeadm join/ {
+  cmd=$0
+  while (getline && $0 !~ /^--$/ && $0 !~ /^$/) {
+    cmd = cmd " " $0
+  }
+  if (cmd !~ /--control-plane/) {
+    gsub(/\\[[:space:]]*/, "", cmd)  # remove backslashes
+    print cmd
+  }
+}' join-command.txt)
+
+# step 2: install calico
 echo ""
-echo "Step 2/4: Installing Calico CNI..."
+echo "step 2/4: installing calico cni..."
 ./install-calico.sh
 
 echo ""
-read -p "Calico installed. Press Enter to join workers..."
+read -p "calico installed. press enter to join workers..."
 
-# Step 3: Join workers
+# step 3: join workers
 echo ""
-echo "Step 3/4: Joining worker nodes..."
+echo "step 3/4: joining worker nodes..."
 cd ../../ansible
 
-echo "Join command: $JOIN_CMD"
+echo "join command: $k8s_join_cmd"
 echo ""
 
-ansible-playbook playbooks/04-join-workers.yml -e "kubeadm_join_command='$K8S_JOIN_CMD'" -k -K
+ansible-playbook playbooks/04-join-workers.yml -e "kubeadm_join_command='$k8s_join_cmd'" -k -K
 
 cd ../kubernetes/bootstrap
 
 echo ""
-echo "Step 4/4: Labeling nodes..."
+echo "step 4/4: labeling nodes..."
 sleep 10
 
 kubectl label node k8s-worker01 node-role.kubernetes.io/worker=worker --overwrite
@@ -53,13 +72,7 @@ kubectl label node k8s-gpu01 workload=ai --overwrite
 
 echo ""
 echo "=========================================="
-echo "Cluster Bootstrap Complete!"
+echo "cluster bootstrap complete!"
 echo "=========================================="
 echo ""
 kubectl get nodes -o wide
-
-echo ""
-echo "Next steps:"
-echo "1. Verify all nodes are Ready"
-echo "2. Check pods: kubectl get pods -A"
-echo "3. Proceed to Phase 5 (MetalLB, ingress, etc.)"
