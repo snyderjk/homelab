@@ -6,10 +6,10 @@ metadata:
   namespace: traefik
 spec:
   from:
-    - group: gateway.networking.k8s.io
-      kind: HTTPRoute
-      namespace: test-app
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: test-app
   to:
-    - group: ""
-      kind: Service
+  - group: ""
+    kind: Service
 
