@@ -1,0 +1,52 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: traefik
+  namespace: traefik
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: traefik
+      version: "37.4.0"  # Latest stable as of Dec 2024
+      sourceRef:
+        kind: HelmRepository
+        name: traefik
+        namespace: traefik
+      interval: 12h
+  values:
+    # Gateway API support
+    providers:
+      kubernetesGateway:
+        enabled: true
+    
+    # Service configuration for MetalLB
+    service:
+      type: LoadBalancer
+      annotations:
+        metallb.universe.tf/address-pool: default-pool
+    
+    # Enable dashboard (optional, for debugging)
+    ingressRoute:
+      dashboard:
+        enabled: true
+        matchRule: Host(`traefik.snyder.home`)
+        entryPoints:
+          - web
+    
+    # Ports
+    ports:
+      web:
+        port: 80
+      websecure:
+        port: 443
+      
+    # Resources
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
