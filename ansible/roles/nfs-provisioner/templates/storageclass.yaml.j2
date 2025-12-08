@@ -1,0 +1,20 @@
+{% for sc in storage_classes %}
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ sc.name }}
+  annotations: 
+    storageclass.kubernetes.io/is-default-class: "{{ sc.is_default | lower }}"
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: {{ nfs_server }}
+  share: {{ nfs_path }}
+reclaimPolicy: {{ sc.reclaim_policy }}
+volumeBindingMode: {{ sc.volume_binding_mode }}
+mountOptions:
+  - nfsvers={{ nfs_version }}
+  - hard
+{% endfor %}
+
+

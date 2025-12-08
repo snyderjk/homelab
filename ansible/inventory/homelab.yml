@@ -1,8 +1,5 @@
 all:
   vars:
-    ansible_user: jason
-    ansible_python_interpreter: /usr/bin/python3
-
     # Kubernetes version to install
     k8s_version: "1.34"
 

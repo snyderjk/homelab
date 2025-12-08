@@ -1,0 +1,20 @@
+---
+# Server Configuration
+nfs_server: "10.17.1.5"
+nfs_path: "/volume1/kubernetes-nfs"
+nfs_version: "4.1"
+
+# NFS CSI Driver Configuration
+nfs_csi_namespace: "kube-system"
+nfs_csi_chart_version: "v4.12.1"
+
+# Storage Classes to Create
+storage_classes:
+  - name: "nfs-csi"
+    is_default: false
+    reclaim_policy: "Delete"
+    volume_binding_mode: "Immediate"
+  - name: "nfs-csi-retain"
+    is_default: false
+    reclaim_policy: "Retain"
+    volume_binding_mode: "Immediate"

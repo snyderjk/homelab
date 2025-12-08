@@ -1,46 +1,172 @@
+---
 - name: Full cluster reset
   hosts: k8s_cluster
   become: true
   tasks:
+    - name: Drain node (if control plane is accessible)
+      shell: |
+        kubectl drain {{ inventory_hostname }} --ignore-daemonsets --delete-emptydir-data --force || true
+      delegate_to: "{{ groups['control_plane'][0] }}"
+      run_once: false
+      ignore_errors: true
+      when: inventory_hostname not in groups['control_plane']
+
     - name: Stop kubelet
       systemd:
         name: kubelet
         state: stopped
       ignore_errors: true
 
+    # Critical: Disconnect iSCSI sessions BEFORE kubeadm reset
+    - name: Get active iSCSI sessions
+      shell: iscsiadm -m session 2>/dev/null || true
+      register: iscsi_sessions
+      ignore_errors: true
+
+    - name: Logout all iSCSI sessions
+      command: iscsiadm -m node --logoutall=all
+      register: iscsi_logout
+      failed_when: false
+      changed_when: '"Logging out of session" in iscsi_logout.stdout'
+
+    - name: Remove all iSCSI node records
+      command: iscsiadm -m node -o delete
+      register: iscsi_node_del
+      failed_when: false
+      changed_when: '"No records found" not in iscsi_node_del.stderr'
+
+    # Unmount any remaining volumes
+    - name: Find kubelet volume mounts
+      shell: mount | grep '/var/lib/kubelet' | awk '{print $3}' | sort -r
+      register: kubelet_mounts
+      ignore_errors: true
+
+    - name: Unmount kubelet volumes
+      shell: umount -f {{ item }}
+      loop: "{{ kubelet_mounts.stdout_lines }}"
+      when: kubelet_mounts.stdout_lines | length > 0
+      ignore_errors: true
+
     - name: Run kubeadm reset
       command: kubeadm reset -f
       ignore_errors: true
 
-    - name: Find and unmount kubelet mounts
+    # Remove CNI interfaces
+    - name: Remove CNI network interfaces
       shell: |
-        for mount in $(mount | grep '/var/lib/kubelet' | awk '{print $3}' | sort -r); do
-          umount $mount 2>/dev/null || true
+        ip link delete cni0 2>/dev/null || true
+        ip link delete flannel.1 2>/dev/null || true
+        ip link delete tunl0 2>/dev/null || true
+        ip link delete vxlan.calico 2>/dev/null || true
+        # Remove all cali* interfaces (Calico)
+        for iface in $(ip link | grep cali | awk '{print $2}' | sed 's/:.*//'); do
+          ip link delete $iface 2>/dev/null || true
         done
       ignore_errors: true
 
     - name: Remove Kubernetes directories
       shell: |
+        # Stop if running as cgroup mount point
+        if mountpoint -q /run/calico/cgroup; then
+          umount -R /run/calico/cgroup 2>/dev/null || true
+        fi
+
         rm -rf /etc/kubernetes
         rm -rf /var/lib/kubelet
         rm -rf /var/lib/etcd
         rm -rf /etc/cni/net.d
+        rm -rf /opt/cni/bin
         rm -rf ~/.kube
+        rm -rf /var/lib/cni
+
+        if ! mountpoint -q /run/calico; then
+          rm -rf /run/calico
+        fi
+        if ! mountpoint -q /var/lib/calico; then
+          rm -rf /var/lib/calico
+        fi
       ignore_errors: true
 
+    # Clean up container runtime
+    - name: Stop all containers
+      shell: |
+        crictl stop $(crictl ps -q) 2>/dev/null || true
+        crictl rm $(crictl ps -aq) 2>/dev/null || true
+      ignore_errors: true
+
+    - name: Remove all pods
+      shell: |
+        crictl rmp -a 2>/dev/null || true
+      ignore_errors: true
+
+    - name: Remove all images (optional - comment out if you want to keep images)
+      shell: |
+        crictl rmi --prune 2>/dev/null || true
+      ignore_errors: true
+
+    # Clean up iptables/ipvs
     - name: Remove iptables rules
       shell: |
         iptables -F
         iptables -t nat -F
         iptables -t mangle -F
+        iptables -t raw -F
         iptables -X
+        iptables -t nat -X
+        iptables -t mangle -X
+        iptables -t raw -X
       ignore_errors: true
 
+    - name: Remove ip6tables rules
+      shell: |
+        ip6tables -F
+        ip6tables -t nat -F
+        ip6tables -t mangle -F
+        ip6tables -t raw -F
+        ip6tables -X
+        ip6tables -t nat -X
+        ip6tables -t mangle -X
+        ip6tables -t raw -X
+      ignore_errors: true
+
+    - name: Clear IPVS rules (if using kube-proxy in ipvs mode)
+      shell: |
+        ipvsadm -C 2>/dev/null || true
+      ignore_errors: true
+
+    # Clean up routes
+    - name: Remove CNI routes
+      shell: |
+        ip route flush proto bird 2>/dev/null || true
+        ip route | grep -E "tunl0|cni0|flannel" | xargs -r -n 1 ip route del || true
+      ignore_errors: true
+
+    # Restart services
     - name: Restart containerd
       systemd:
         name: containerd
         state: restarted
 
+    - name: Restart iscsid (to clear state)
+      systemd:
+        name: iscsid
+        state: restarted
+      ignore_errors: true
+
     - name: Show cleanup complete
       debug:
         msg: "Node reset complete"
+
+# Optional: Run this on control plane to ensure clean slate
+- name: Clean up control plane specific items
+  hosts: control_plane
+  become: true
+  tasks:
+    - name: Remove etcd data completely
+      shell: |
+        rm -rf /var/lib/etcd/*
+      ignore_errors: true
+
+    - name: Show control plane cleanup complete
+      debug:
+        msg: "Control plane reset complete"

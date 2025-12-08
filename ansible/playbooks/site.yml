@@ -1,0 +1,42 @@
+---
+# Full homelab cluster bring-up orchestrator
+
+- name: 99 – Complete Cluster Reset
+  import_playbook: 99-complete-cluster-reset.yml
+
+- name: 00 – Bootstrap OS on all nodes
+  import_playbook: 00-bootstrap.yml
+
+- name: 01 – Install Kubernetes prereqs (containerd, kubeadm, kubelet, kubectl)
+  import_playbook: 01-k8s-prereqs.yml
+
+- name: 02 – GPU setup
+  import_playbook: 02-gpu-setup.yml
+
+- name: 03 – Containerd CRI fix
+  import_playbook: 03-containerd-CRI-fix.yml
+
+- name: 04 – Install iSCSI + multipath tools
+  import_playbook: 04-install-iscsi-tools.yml
+
+- name: 05 – Init Control Plans
+  import_playbook: 05-init-control-plane.yml
+
+- name: 06 – Install Calico CNI
+  import_playbook: 06-install-calico.yml
+
+- name: 07 – Join worker and GPU nodes
+  import_playbook: 07-join-workers.yml
+
+- name: 08 - Kubeconfig Setup
+  import_playbook: 08-kubeconfig-setup.yml
+
+- name: 09 - Setupe NFS Storage
+  import_playbook: 09-setup-nfs-storage.yml
+
+- name: 10 - Setup Metallb
+  import_playbook: 10-setup-metallb.yml
+
+- name: 11 - Bootstrap Flux
+  import_playbook: 11-bootstrap-flux.yml
+

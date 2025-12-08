@@ -1,0 +1,99 @@
+---
+- name: Check if Flux CLI is installed
+  command: flux version --client
+  register: flux_check
+  failed_when: false
+  changed_when: false
+
+- name: Install Flux CLI
+  when: flux_check.rc != 0
+  block:
+    - name: Download Flux installation script
+      get_url:
+        url: https://fluxcd.io/install.sh
+        dest: /tmp/install_flux.sh
+        mode: '0700'
+
+    - name: Run Flux installation script
+      command: bash /tmp/install_flux.sh
+      become: yes
+
+    - name: Remove Flux installation script
+      file:
+        path: /tmp/install_flux.sh
+        state: absent
+
+- name: Create directory for Flux SSH key
+  file:
+    path: "{{ ansible_env.HOME }}/.ssh/flux"
+    state: directory
+    mode: '0700'
+
+- name: Check if Flux SSH key exists
+  stat:
+    path: "{{ ansible_env.HOME }}/.ssh/flux/identity"
+  register: flux_ssh_key
+
+- name: Generate Flux SSH key pair
+  command: >
+    ssh-keygen -t ed25519 
+    -f {{ ansible_env.HOME }}/.ssh/flux/identity 
+    -N '' 
+    -C 'flux-{{ github_repo }}'
+  when: not flux_ssh_key.stat.exists
+
+- name: Read Flux public key
+  slurp:
+    src: "{{ ansible_env.HOME }}/.ssh/flux/identity.pub"
+  register: flux_public_key
+
+- name: Display Flux public key
+  debug:
+    msg:
+      - "============================================"
+      - "Add this SSH public key to your GitHub repo:"
+      - "{{ flux_public_key['content'] | b64decode }}"
+      - ""
+      - "Instructions:"
+      - "1. Go to: https://github.com/{{ github_owner }}/{{ github_repo }}/settings/keys"
+      - "2. Click 'Add deploy key'"
+      - "3. Title: flux-homelab"
+      - "4. Key: (paste the key above)"
+      - "5. Check 'Allow write access' ✓"
+      - "6. Click 'Add key'"
+      - ""
+      - "Press Enter when done to continue..."
+      - "============================================"
+
+- name: Wait for user to add deploy key
+  pause:
+    prompt: "Press Enter after adding the deploy key to GitHub"
+
+- name: Bootstrap Flux
+  command: >
+    flux bootstrap git
+    --url=ssh://git@github.com/{{ github_owner }}/{{ github_repo }}
+    --branch={{ github_branch }}
+    --path={{ flux_path }}
+    --private-key-file={{ ansible_env.HOME }}/.ssh/flux/identity
+    --components-extra=image-reflector-controller,image-automation-controller
+  environment:
+    KUBECONFIG: "{{ ansible_env.HOME }}/.kube/config"
+
+- name: Wait for Flux controllers to be ready
+  command: >
+    kubectl wait pods
+    --all
+    --for=condition=Ready
+    --namespace {{ flux_namespace }}
+    --timeout=300s
+  changed_when: false
+
+- name: Verify Flux installation
+  command: flux check
+  register: flux_check_output
+  changed_when: false
+
+- name: Display Flux status
+  debug:
+    msg: "{{ flux_check_output.stdout_lines }}"

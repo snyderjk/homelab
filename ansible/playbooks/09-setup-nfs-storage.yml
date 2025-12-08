@@ -1,0 +1,8 @@
+---
+- name: Setup NFS Storage with CSI driver
+  hosts: k8s-cp01
+  gather_facts: yes
+  become: no
+
+  roles:
+    - nfs-provisioner

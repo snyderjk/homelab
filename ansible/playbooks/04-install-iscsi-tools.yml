@@ -1,0 +1,79 @@
+- name: Install iSCSI tools on all nodes
+  hosts: k8s_cluster
+  become: true
+
+  vars:
+    iscsi_packages:
+      - open-iscsi
+
+    # Ubuntu/Debian service units
+    iscsi_services:
+      - iscsid
+      - open-iscsi
+
+  tasks:
+    - name: Install open-iscsi and multipath tools
+      apt:
+        name:
+          - open-iscsi
+          - lsscsi
+          - sg3-utils
+          - multipath-tools
+          - scsitools
+        state: present
+        update_cache: yes
+
+    - name: Stop iSCSI services before changing initiator
+      service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: true
+      loop: "{{ iscsi_services }}"
+
+    - name: Ensure /etc/iscsi exists
+      file:
+        path: /etc/iscsi
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Write /etc/iscsi/initiatorname.iscsi
+      copy:
+        dest: /etc/iscsi/initiatorname.iscsi
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          # Managed by Ansible
+          InitiatorName={{ iqn }}
+
+    - name: Restart (and enable) iSCSI services
+      service:
+        name: "{{ item }}"
+        state: restarted
+        enabled: true
+      loop: "{{ iscsi_services }}"
+
+    - name: Enable and start multipathd
+      systemd:
+        name: multipathd
+        enabled: yes
+        state: started
+
+    - name: Configure multipath
+      copy:
+        content: |
+          defaults {
+            user_friendly_names yes
+            find_multipaths yes
+          }
+        dest: /etc/multipath.conf
+        backup: yes
+      notify: restart multipathd
+
+  handlers:
+    - name: restart multipathd
+      systemd:
+        name: multipathd
+        state: restarted

@@ -1,0 +1,19 @@
+---
+# Flux Configuration
+flux_version: "2.7.5"
+flux_namespace: "flux-system"
+
+# Github Repository Configuration
+github_owner: "snyderjk"
+github_repo: "homelab"
+github_branch: "main"
+
+# Flux Bootstrap Configuration
+flux_path: "./kubernetes/clusters/homelab"
+
+# Components
+flux_components:
+  - source-controller
+  - kustomize-controller
+  - helm-controller
+  - notification-controller

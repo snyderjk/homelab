@@ -123,3 +123,39 @@
       debug:
         msg: "{{ item.stdout }}"
       loop: "{{ version_check.results }}"
+
+
+- name: Install Cluster Management Tools
+  hosts: k8s-cp01
+  become: yes
+  
+  tasks:
+    - name: Install Python Kubernetes library
+      pip:
+        name: kubernetes
+        state: present
+        extra_args: --break-system-packages
+
+    - name: Check if Helm is installed
+      command: helm version --short
+      register: helm_check
+      failed_when: false
+      changed_when: false
+      become: no
+
+    - name: Install Helm
+      when: helm_check.rc != 0
+      block:
+        - name: Download Helm installation script
+          get_url:
+            url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+            dest: /tmp/get_helm.sh
+            mode: '0700'
+
+        - name: Run Helm installation script
+          command: /tmp/get_helm.sh
+
+        - name: Remove Helm installation script
+          file:
+            path: /tmp/get_helm.sh
+            state: absent

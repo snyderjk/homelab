@@ -1,0 +1,8 @@
+---
+- name: Bootstrap Flux GitOps
+  hosts: k8s-cp01
+  gather_facts: yes
+  become: no
+  
+  roles:
+    - flux

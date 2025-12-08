@@ -1,0 +1,55 @@
+---
+- name: Add MetalLB Helm repository
+  kubernetes.core.helm_repository:
+    name: metallb
+    repo_url: https://metallb.github.io/metallb
+
+- name: Update Helm repositories
+  command: helm repo update
+  changed_when: false
+
+- name: Install MetalLB
+  kubernetes.core.helm:
+    name: metallb
+    chart_ref: metallb/metallb
+    chart_version: "{{ metallb_chart_version }}"
+    release_namespace: "{{ metallb_namespace }}"
+    create_namespace: true
+    wait: true
+
+- name: Wait for MetalLB controller to be ready
+  command: >
+    kubectl wait pod
+    --selector app.kubernetes.io/component=controller
+    --for condition=ready
+    --namespace {{ metallb_namespace }}
+    --timeout=300s
+  changed_when: false
+
+- name: Wait for MetalLB speaker to be ready
+  command: >
+    kubectl wait pod
+    --selector app.kubernetes.io/component=speaker
+    --for condition=ready
+    --namespace {{ metallb_namespace }}
+    --timeout=300s
+  changed_when: false
+
+- name: Create IPAddressPool
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'ipaddresspool.yaml.j2') }}"
+
+- name: Create L2Advertisement
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'l2advertisement.yaml.j2') }}"
+
+- name: Verify MetalLB configuration
+  command: kubectl get ipaddresspool -n {{ metallb_namespace }}
+  register: metallb_config
+  changed_when: false
+
+- name: Display MetalLB configuration
+  debug:
+    msg: "{{ metallb_config.stdout_lines }}"

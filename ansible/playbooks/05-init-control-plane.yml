@@ -1,0 +1,51 @@
+---
+- name: 10 - Initialize Kubernetes control plane
+  hosts: control_plane
+  become: true
+  vars:
+    kubeadm_config_src: "{{ playbook_dir }}/../../kubernetes/bootstrap/kubeadm-config.yaml"
+    kubeadm_config_dest: "/root/kubeadm-config.yaml"
+
+  tasks:
+    - name: Check if control plane is already initialized
+      stat:
+        path: /etc/kubernetes/admin.conf
+      register: admin_conf
+
+    - name: Copy kubeadm config to control plane
+      copy:
+        src: "{{ kubeadm_config_src }}"
+        dest: "{{ kubeadm_config_dest }}"
+        owner: root
+        group: root
+        mode: "0644"
+      when: not admin_conf.stat.exists
+
+    - name: Run kubeadm init
+      command: kubeadm init --config={{ kubeadm_config_dest }} --upload-certs
+      when: not admin_conf.stat.exists
+      register: kubeadm_init
+
+    - name: Create kubeconfig directory for root
+      file:
+        path: /root/.kube
+        state: directory
+        mode: "0700"
+
+    - name: Copy admin.conf to root kubeconfig
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /root/.kube/config
+        owner: root
+        group: root
+        mode: "0600"
+        remote_src: true
+
+    - name: Generate worker join command
+      command: kubeadm token create --print-join-command
+      register: join_cmd
+
+    - name: Store join command on control plane as a fact
+      set_fact:
+        kubeadm_join_command: "{{ join_cmd.stdout }}"
+

@@ -1,6 +1,0 @@
-  kubeadm join 10.77.1.10:6443 --token ff7csw.gbm2zx29ptafr8c9 \
-	--discovery-token-ca-cert-hash sha256:00e53d1712fe3ade982e5c9cf8327e6862a5a40108db3b43ae565508303592ef \
-	--control-plane --certificate-key 80b8dd251e8c474068d03cffb145ea587df64edac0334e60be9e9f2b7dee53d3
---
-kubeadm join 10.77.1.10:6443 --token ff7csw.gbm2zx29ptafr8c9 \
-	--discovery-token-ca-cert-hash sha256:00e53d1712fe3ade982e5c9cf8327e6862a5a40108db3b43ae565508303592ef 

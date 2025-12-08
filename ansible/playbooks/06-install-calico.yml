@@ -1,0 +1,24 @@
+---
+- name: Install Calico CNI
+  hosts: control_plane
+  become: true
+  gather_facts: false
+
+  vars:
+    calico_manifest_src: "{{ playbook_dir }}/../../kubernetes/bootstrap/calico.yaml"
+    calico_manifest_dest: "/root/calico.yaml"
+
+  tasks:
+    - name: Copy Calico manifest to control plane
+      copy:
+        src: "{{ calico_manifest_src }}"
+        dest: "{{ calico_manifest_dest }}"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Apply Calico manifest
+      command: kubectl apply -f {{ calico_manifest_dest }}
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+

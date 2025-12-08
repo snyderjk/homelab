@@ -1,0 +1,45 @@
+---
+- name: Install Python Kubernetes library
+  pip:
+    name: kubernetes
+    state: present
+    extra_args: --break-system-packages
+  become: yes
+
+- name: Add NFS CSI Helm repository
+  kubernetes.core.helm_repository:
+    name: csi-driver-nfs
+    repo_url: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
+
+- name: Update Helm repository
+  command: helm repo update
+  changed_when: false
+
+- name: Install NFS CSI Driver
+  kubernetes.core.helm:
+    name: csi-driver-nfs
+    chart_ref: csi-driver-nfs/csi-driver-nfs
+    chart_version: "{{ nfs_csi_chart_version }}"
+    release_namespace: "{{ nfs_csi_namespace }}"
+    create_namespace: true
+    wait: true
+
+- name: Wait for NFS CSI pods to be ready
+  command: >
+    kubectl wait pod
+    --selector app.kubernetes.io/name=csi-driver-nfs
+    --for condition=ready
+    --namespace {{ nfs_csi_namespace }}
+    --timeout=300s
+  changed_when: false
+
+- name: Create storage classes
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'storageclass.yaml.j2') }}"
+
+- name: Verify storage classes were created
+  command: kubectl get storageclass
+  register: sc_output
+  changed_when: false
+

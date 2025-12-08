@@ -1,0 +1,9 @@
+---
+# MetalLB Configuration
+metallb_namespace: "metallb-system"
+metallb_chart_version: "0.15.3"
+
+# IP Address Pool Configuration
+metallb_ip_range_start: "10.77.1.200"
+metallb_ip_range_end: "10.77.1.250"
+metallb_pool_name: "default-pool"

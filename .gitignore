@@ -1,7 +1,6 @@
 *.retry
 .ansible/
 
-#SOPS keys
-.keys/
-*.key
-*age.key
+.vault_pass
+*.secret
+*_secret.yml

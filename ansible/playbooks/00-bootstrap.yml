@@ -29,11 +29,16 @@
           - nfs-common
           - open-iscsi
           - lvm2
+          - lsscsi
+          - sg3-utils
+          - multipath-tools
+          - python3
+          - python3-pip
         state: present
 
     - name: Set timezone
-      timezone:
-        name: "{{ timezone }}"
+      community.general.timezone:
+        name: America/Chicago
 
     - name: Add critical hosts to /etc/hosts
       lineinfile:
@@ -42,10 +47,15 @@
         state: present
       loop: "{{ critical_hosts }}"
 
-    - name: Disable swap
-      shell: |
-        swapoff -a
-        sed -i '/ swap / s/^/#/' /etc/fstab
+    - name: Disable all swap immediately
+      command: swapoff -a
+      when: ansible_swaptotal_mb | default(0) | int > 0
+
+    - name: Comment out swap entry in /etc/fstab
+      replace:
+        path: /etc/fstab
+        regexp: '^(\s*)/swap\.img(\s+)'
+        replace: '#\1/swap.img\2'
 
     - name: Check swap disabled
       command: swapon --show
@@ -91,6 +101,18 @@
         msg: "Rebooting after kernel upgrade"
         reboot_timeout: 300
       when: ansible_facts.packages['linux-image-generic'] is defined
+
+    - name: Enable and start iscsid
+      systemd:
+        name: iscsid
+        enabled: yes
+        state: started
+
+    - name: Enable and start open-iscsi
+      systemd:
+        name: open-iscsi
+        enabled: yes
+        state: started
 
 - name: GPU node specific Bootstrap
   hosts: gpu_workers
