@@ -10,6 +10,3 @@ spec:
     - name: http
       protocol: HTTP
       port: 8000
-      allowedRoutes:
-        namespaces:
-          from: Same
