@@ -69,6 +69,8 @@ spec:
         enabled: true
         storageClassName: nfs-csi-retain
         size: 5Gi
+      initChownData:
+        enabled: false
       service:
         type: ClusterIP
       resources:
