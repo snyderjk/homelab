@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: traefik
-      version: "37.4.0"  # Latest stable as of Dec 2024
+      version: "37.4.0"
       sourceRef:
         kind: HelmRepository
         name: traefik
@@ -38,9 +38,19 @@ spec:
     # Ports
     ports:
       web:
-        port: 80
+        port: 8000           # Internal port for Gateway API
+        exposedPort: 80      # External port
+        expose:
+          default: true
       websecure:
-        port: 443
+        port: 8443           # Internal port for Gateway API  
+        exposedPort: 443     # External port
+        expose:
+          default: true
+      traefik:
+        port: 9000           # Dashboard/API port
+        expose:
+          default: false
       
     # Resources
     resources:
