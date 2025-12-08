@@ -4,3 +4,4 @@
 .vault_pass
 *.secret
 *_secret.yml
+secrets.yaml
