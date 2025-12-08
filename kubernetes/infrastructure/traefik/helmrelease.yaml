@@ -25,7 +25,7 @@ spec:
     service:
       type: LoadBalancer
       annotations:
-        metallb.universe.tf/address-pool: default-pool
+        metallb.universe.tf/loadBalancerIPs: 10.77.1.201
     
     # Enable dashboard (optional, for debugging)
     ingressRoute:
