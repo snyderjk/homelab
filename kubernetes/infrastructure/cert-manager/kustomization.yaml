@@ -5,5 +5,5 @@ resources:
   - namespace.yaml
   - helmrepository.yaml
   - helmrelease.yaml
-  - clusterissuer-letsencrypt.yaml
   - clusterissuer-selfsigned.yaml
+  - clusterissuer-letsencrypt.yaml

@@ -10,6 +10,7 @@ spec:
     namespace: traefik
   hostnames:
   - whoami.snyder.home
+  - test.snyderhomelab.com
   rules:
   - matches:
     - path:
