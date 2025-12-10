@@ -7,3 +7,4 @@ resources:
   - helmrelease.yaml
   - clusterissuer-selfsigned.yaml
   - clusterissuer-letsencrypt.yaml
+  - certificate-snyderhomelab.yaml
