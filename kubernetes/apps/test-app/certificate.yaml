@@ -1,0 +1,13 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: test-snyderhomelab-tls
+  namespace: test-app
+spec:
+  secretName: test-snyderhomelab-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - test.snyderhomelab.com
