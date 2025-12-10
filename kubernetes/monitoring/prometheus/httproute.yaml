@@ -9,7 +9,7 @@ spec:
   - name: traefik-gateway
     namespace: traefik
   hostnames:
-  - grafana.snyder.home
+  - grafana.snyderhomelab.com
   rules:
   - matches:
     - path:

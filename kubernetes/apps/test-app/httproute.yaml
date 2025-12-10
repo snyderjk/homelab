@@ -9,7 +9,6 @@ spec:
   - name: traefik-gateway
     namespace: traefik
   hostnames:
-  - whoami.snyder.home
   - test.snyderhomelab.com
   rules:
   - matches:
