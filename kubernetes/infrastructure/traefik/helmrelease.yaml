@@ -33,7 +33,7 @@ spec:
         enabled: true
         matchRule: Host(`traefik.snyderhomelab.com`)
         entryPoints:
-          - web
+          - websecure
     
     # Ports
     ports:
