@@ -77,14 +77,7 @@ spec:
         accessMode: ReadWriteOnce
 
       ingress:
-        enabled: true
-        ingressClassName: nginx
-        hosts:
-          - host: vault.snyderhomelab.com
-        tls:
-          - secretName: vault-tls
-            hosts:
-              - vault.snyderhomelab.com
+        enabled: false
 
     ui:
       enabled: true
