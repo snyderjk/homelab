@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pfsense-cert
+  namespace: cert-manager  # or wherever you manage certs
+spec:
+  secretName: pfsense-tls
+  issuerRef:
+    name: letsencrypt-prod  # your existing issuer
+    kind: ClusterIssuer
+  dnsNames:
+    - firewall.snyderhomelab.com
