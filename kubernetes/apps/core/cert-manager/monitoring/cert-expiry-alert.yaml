@@ -3,7 +3,9 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   name: certificate-expiry
-  namespace: monitoring
+  namespace: cert-manager
+  labels:
+    release: kube-prometheus-stack
 spec:
   groups:
     - name: certificates
