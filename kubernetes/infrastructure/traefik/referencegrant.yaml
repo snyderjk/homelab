@@ -12,6 +12,9 @@ spec:
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
     namespace: monitoring
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: vault
   to:
   - group: ""
     kind: Service
