@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vault-backup
+  namespace: vault
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: vault
+          restartPolicy: OnFailure
+          containers:
+          - name: vault-backup
+            image: hashicorp/vault:1.19.0
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              
+              # Authenticate to Vault using Kubernetes auth
+              SA_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              VAULT_TOKEN=$(vault write -field=token auth/kubernetes/login role=backup-role jwt=$SA_TOKEN)
+              export VAULT_TOKEN
+              
+              # Create snapshot
+              SNAPSHOT_FILE="/tmp/vault-snapshot-$(date +%Y%m%d-%H%M%S).snap"
+              vault operator raft snapshot save $SNAPSHOT_FILE
+              
+              # Install AWS CLI and upload
+              apk add --no-cache aws-cli
+              aws s3 cp $SNAPSHOT_FILE s3://vault-homelab-vault-backups-840296800572/snapshots/
+              
+              echo "Backup completed successfully"
+            env:
+            - name: VAULT_ADDR
+              value: "http://vault-active:8200"
+            envFrom:
+            - secretRef:
+                name: vault-aws-creds
