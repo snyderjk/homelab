@@ -5,4 +5,3 @@ resources:
   - helmrepository.yaml
   - helmrelease.yaml
   - secretstore.yaml
-  - external-secrets-demo.yaml
