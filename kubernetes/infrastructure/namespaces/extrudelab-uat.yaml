@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: extrudelab-uat
+  labels:
+    app: extrudelab
+    environment: uat
