@@ -17,6 +17,8 @@ spec:
         app: extrudelab
         component: api
     spec:
+      imagePullSecrets:
+        - name: ghcr-credentials
       containers:
       - name: api
         image: ghcr.io/snyderjk/extrudelab:latest
