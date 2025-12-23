@@ -1,0 +1,156 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gtnh
+---
+# Optional: a label you can use for policies/organization
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: gtnh-quota
+  namespace: gtnh
+spec:
+  hard:
+    requests.cpu: "6"
+    requests.memory: "20Gi"
+    limits.cpu: "8"
+    limits.memory: "24Gi"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gtnh-data
+  namespace: gtnh
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: nfs-csi-retain
+  resources:
+    requests:
+      storage: 80Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gtnh
+  namespace: gtnh
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.77.1.205
+  selector:
+    app: gtnh
+  ports:
+    - name: minecraft
+      port: 25565
+      targetPort: 25565
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: gtnh
+  namespace: gtnh
+spec:
+  serviceName: gtnh
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gtnh
+  template:
+    metadata:
+      labels:
+        app: gtnh
+    spec:
+      # Pin to your control-plane node
+      nodeSelector:
+        kubernetes.io/hostname: k8s-cp01
+
+      # Allow scheduling on the control-plane (keeps the default taint in place)
+      tolerations:
+        - key: "node-role.kubernetes.io/control-plane"
+          operator: "Exists"
+          effect: "NoSchedule"
+        # If your cluster still uses the legacy master taint, keep this:
+        - key: "node-role.kubernetes.io/master"
+          operator: "Exists"
+          effect: "NoSchedule"
+
+      terminationGracePeriodSeconds: 180
+
+      # Helps with NFS volume permissions in many setups
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+
+      containers:
+        - name: minecraft
+          image: itzg/minecraft-server:latest
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: minecraft
+              containerPort: 25565
+              protocol: TCP
+
+          env:
+            - name: EULA
+              value: "TRUE"
+
+            # GTNH server mode
+            - name: TYPE
+              value: "GTNH"
+            # Pin to your desired version
+            - name: GTNH_VERSION
+              value: "2.8.0"
+
+            # Memory allocation (adjust as you like; leave headroom on the 32GB node)
+            - name: MEMORY
+              value: "12G"
+
+            # Nice-to-have server identity
+            - name: SERVER_NAME
+              value: "GTNH 2.8 - Homelab"
+            - name: MOTD
+              value: "GTNH 2.8 on Kubernetes (k8s-cp01)"
+            - name: TZ
+              value: "America/Chicago"
+
+          resources:
+            requests:
+              cpu: "2000m"
+              memory: "12Gi"
+            limits:
+              cpu: "4000m"
+              memory: "16Gi"
+
+          volumeMounts:
+            - name: data
+              mountPath: /data
+
+          # Optional: allow a clean stop when Kubernetes terminates the pod
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-lc", "echo 'Stopping server...'; kill -TERM 1; sleep 30"]
+
+          # Basic readiness: we just check that the server port is listening.
+          readinessProbe:
+            tcpSocket:
+              port: 25565
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 12
+
+          livenessProbe:
+            tcpSocket:
+              port: 25565
+            initialDelaySeconds: 180
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 6
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: gtnh-data
