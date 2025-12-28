@@ -14,3 +14,7 @@ patches:
       - op: replace
         path: /spec/hostnames/0
         value: extrudelab-dev.snyderhomelab.com
+images:
+  - name: ghcr.io/snyderjk/extrudelab
+    newTag: 36b8dee
+
