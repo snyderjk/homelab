@@ -1,0 +1,153 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pihole-group-toggle
+  namespace: pihole
+data:
+  toggle-group.sh: |
+    #!/bin/sh
+    set -eu
+
+    : "${PIHOLE_BASE_URL:?Must set PIHOLE_BASE_URL, e.g. https://pihole.snyderhomelab.com/api}"
+    : "${PIHOLE_PASSWORD:?Must set PIHOLE_PASSWORD from a Secret}"
+    : "${PIHOLE_GROUP_NAME:?Must set PIHOLE_GROUP_NAME}"
+
+    ACTION="${1:-}"
+    if [ "$ACTION" != "enable" ] && [ "$ACTION" != "disable" ]; then
+      echo "Usage: toggle-group.sh <enable|disable>" >&2
+      exit 2
+    fi
+
+    # 1) Authenticate, get SID (Pi-hole v6 uses session-based auth)
+    AUTH_JSON="$(curl -sk -X POST "${PIHOLE_BASE_URL}/auth" \
+      -H "Content-Type: application/json" \
+      --data "{\"password\":\"${PIHOLE_PASSWORD}\"}")"
+
+    SID="$(echo "$AUTH_JSON" | jq -r '.session.sid // .sid // empty')"
+    if [ -z "$SID" ] || [ "$SID" = "null" ]; then
+      echo "Failed to get SID from /api/auth response: $AUTH_JSON" >&2
+      exit 1
+    fi
+
+    # 2) Read current group details (we grab comment/description so PUT can be “full”)
+    GROUP_JSON="$(curl -sk -X GET "${PIHOLE_BASE_URL}/groups/${PIHOLE_GROUP_NAME}" \
+      -H "accept: application/json" \
+      -H "sid: ${SID}" \
+      -H "X-FTL-SID: ${SID}")"
+
+    COMMENT="$(echo "$GROUP_JSON" | jq -r '.groups[0].comment // .groups[0].description // ""')"
+
+    echo "Debug - Action: ${ACTION}"
+
+    if [ "$ACTION" = "enable" ]; then
+      ENABLED=true
+    else
+      ENABLED=false
+    fi
+
+    PAYLOAD="$(jq -n \
+      --arg gn "${PIHOLE_GROUP_NAME}" \
+      --arg gc "${COMMENT}" \
+      --argjson en "${ENABLED}" \
+      '{name: $gn, comment: $gc, enabled: $en}')"
+
+    # 3) Update the group enabled flag (PUT /api/groups/<name>)
+    curl -sk -X PUT "${PIHOLE_BASE_URL}/groups/${PIHOLE_GROUP_NAME}" \
+      -H "accept: application/json" \
+      -H "Content-Type: application/json" \
+      -H "sid: ${SID}" \
+      -H "X-FTL-SID: ${SID}" \
+      --data "${PAYLOAD}" >/dev/null
+
+    # 4) Logout (optional but polite)
+    curl -sk -X DELETE "${PIHOLE_BASE_URL}/auth" \
+      -H "accept: application/json" \
+      -H "sid: ${SID}" \
+      -H "X-FTL-SID: ${SID}" >/dev/null || true
+
+    echo "OK: ${PIHOLE_GROUP_NAME} => enabled=${ENABLED}"
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pihole-timeblocked-enable
+  namespace: pihole
+spec:
+  schedule: "0 5 * * 1-5"           # 05:00 Mon–Fri
+  timeZone: "America/Chicago"       
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: toggle
+              image: alpine:3.20
+              command: ["/bin/sh","-c"]
+              args:
+                - apk add --no-cache curl jq ca-certificates >/dev/null
+                  && /scripts/toggle-group.sh enable
+              env:
+                - name: PIHOLE_BASE_URL
+                  value: "https://pihole.snyderhomelab.com/api"
+                - name: PIHOLE_GROUP_NAME
+                  value: "TimeBlocked"
+                - name: PIHOLE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: pihole-admin
+                      key: password
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+          volumes:
+            - name: scripts
+              configMap:
+                name: pihole-group-toggle
+                defaultMode: 0555
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pihole-timeblocked-disable
+  namespace: pihole
+spec:
+  schedule: "0 18 * * 1-5"          # 18:00 Mon–Fri
+  timeZone: "America/Chicago"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: toggle
+              image: alpine:3.20
+              command: ["/bin/sh","-c"]
+              args:
+                - apk add --no-cache curl jq ca-certificates >/dev/null
+                  && /scripts/toggle-group.sh disable
+              env:
+                - name: PIHOLE_BASE_URL
+                  value: "https://pihole.snyderhomelab.com/api"
+                - name: PIHOLE_GROUP_NAME
+                  value: "TimeBlocked"
+                - name: PIHOLE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: pihole-admin
+                      key: password
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+          volumes:
+            - name: scripts
+              configMap:
+                name: pihole-group-toggle
+                defaultMode: 0555
+
