@@ -42,8 +42,7 @@ spec:
     # --- Basic env ---
     extraEnvVars:
       TZ: America/Chicago
-      DNS1: "1.1.1.1"
-      DNS2: "1.0.0.1"
+      FTLCONF_dns_upstreams: "10.77.1.1;8.8.8.8"
 
     # Optional but recommended: keep it stable on one node (so your PVC + networking are boring)
     # nodeSelector:
