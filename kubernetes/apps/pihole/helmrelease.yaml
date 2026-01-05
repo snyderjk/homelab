@@ -27,6 +27,7 @@ spec:
 
     # --- DNS Service on LAN (MetalLB assigns this IP) ---
     serviceDns:
+      mixedService: true
       type: LoadBalancer
       loadBalancerIP: 10.77.1.202
       externalTrafficPolicy: Local
