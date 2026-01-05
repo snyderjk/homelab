@@ -15,6 +15,9 @@ spec:
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
     namespace: vault
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: pihole
   to:
   - group: ""
     kind: Service

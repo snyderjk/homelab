@@ -5,3 +5,4 @@ resources:
   - core
   - test-app
   - extrudelab/overlays/dev
+  - pihole

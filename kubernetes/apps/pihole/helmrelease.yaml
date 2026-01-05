@@ -1,0 +1,50 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: pihole
+  namespace: pihole
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: pihole
+      version: "*"
+      sourceRef:
+        kind: HelmRepository
+        name: mojo2600
+        namespace: pihole
+      interval: 12h
+  values:
+    admin:
+      existingSecret: pihole-admin
+
+    persistentVolumeClaim:
+      enabled: true
+      storageClass: nfs-csi-retain
+      size: 2Gi
+      accessModes:
+         - ReadWriteOnce
+
+    # --- DNS Service on LAN (MetalLB assigns this IP) ---
+    serviceDns:
+      type: LoadBalancer
+      loadBalancerIP: 10.77.1.202
+      externalTrafficPolicy: Local
+
+    # --- Web UI Service (we’ll expose via ingress) ---
+    serviceWeb:
+      type: ClusterIP
+
+    ingress:
+      enabled: false
+
+    # --- Basic env ---
+    extraEnvVars:
+      TZ: America/Chicago
+      DNS1: "1.1.1.1"
+      DNS2: "1.0.0.1"
+
+    # Optional but recommended: keep it stable on one node (so your PVC + networking are boring)
+    # nodeSelector:
+    #   kubernetes.io/hostname: k8s-worker-01
+
