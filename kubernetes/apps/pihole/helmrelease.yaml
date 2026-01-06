@@ -25,26 +25,19 @@ spec:
       accessModes:
          - ReadWriteOnce
 
-    # --- DNS Service on LAN (MetalLB assigns this IP) ---
     serviceDns:
       mixedService: true
       type: LoadBalancer
       loadBalancerIP: 10.77.1.202
       externalTrafficPolicy: Local
 
-    # --- Web UI Service (we’ll expose via ingress) ---
     serviceWeb:
       type: ClusterIP
 
     ingress:
       enabled: false
 
-    # --- Basic env ---
     extraEnvVars:
       TZ: America/Chicago
       FTLCONF_dns_upstreams: "10.77.1.1"
-
-    # Optional but recommended: keep it stable on one node (so your PVC + networking are boring)
-    # nodeSelector:
-    #   kubernetes.io/hostname: k8s-worker-01
 
