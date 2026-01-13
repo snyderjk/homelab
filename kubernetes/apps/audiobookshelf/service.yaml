@@ -7,7 +7,5 @@ spec:
   selector:
     app: audiobookshelf
   ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 3005
+    - port: 3005
 
