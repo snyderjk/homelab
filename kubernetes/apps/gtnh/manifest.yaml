@@ -84,7 +84,7 @@ spec:
 
       containers:
         - name: minecraft
-          image: itzg/minecraft-server:latest
+          image: itzg/minecraft-server:java25
           imagePullPolicy: IfNotPresent
 
           ports:
@@ -101,11 +101,14 @@ spec:
               value: "GTNH"
             # Pin to your desired version
             - name: GTNH_VERSION
-              value: "2.8.0"
+              value: "2.8.4"
 
             # Memory allocation (adjust as you like; leave headroom on the 32GB node)
             - name: MEMORY
               value: "12G"
+
+            - name: VIEW_DISTANCE
+              value: "12"
 
             # Nice-to-have server identity
             - name: SERVER_NAME
