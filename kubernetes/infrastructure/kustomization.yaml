@@ -7,3 +7,4 @@ resources:
   - cert-manager
   - vault
   - external-secrets
+  - synology-csi
