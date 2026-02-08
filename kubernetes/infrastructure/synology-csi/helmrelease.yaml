@@ -15,3 +15,22 @@ spec:
   values:
     clientInfoSecret:
       name: synology-csi-auth
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: DaemonSet
+              name: synology-csi-node
+            patch: |
+              - op: add
+                path: /spec/template/spec/volumes/-
+                value:
+                  name: udev
+                  hostPath:
+                    path: /run/udev
+                    type: Directory
+              - op: add
+                path: /spec/template/spec/containers/1/volumeMounts/-
+                value:
+                  name: udev
+                  mountPath: /run/udev
