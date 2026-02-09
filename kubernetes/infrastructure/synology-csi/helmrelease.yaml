@@ -15,6 +15,15 @@ spec:
   values:
     clientInfoSecret:
       name: synology-csi-auth
+    storageClasses:
+      iscsi-delete:
+        reclaimPolicy: Delete
+        parameters:
+          fsType: ext4
+      iscsi-retain:
+        reclaimPolicy: Retain
+        parameters:
+          fsType: ext4
   postRenderers:
     - kustomize:
         patches:
