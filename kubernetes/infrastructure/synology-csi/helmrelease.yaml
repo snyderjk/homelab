@@ -40,3 +40,6 @@ spec:
                   name: device-dir
                   mountPath: /dev
                   mountPropagation: Bidirectional
+              - op: add
+                path: /spec/template/spec/hostPID
+                value: true
