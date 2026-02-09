@@ -7,3 +7,4 @@ resources:
   - extrudelab/overlays/dev
   - pihole
   - audiobookshelf
+  - n8n
