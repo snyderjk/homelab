@@ -34,3 +34,9 @@ spec:
                 value:
                   name: udev
                   mountPath: /run/udev
+              - op: replace
+                path: /spec/template/spec/containers/1/volumeMounts/1
+                value:
+                  name: device-dir
+                  mountPath: /dev
+                  mountPropagation: Bidirectional
