@@ -15,15 +15,11 @@ spec:
       labels:
         app: openclaw
     spec:
-      securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
       containers:
       - name: openclaw
         image: ghcr.io/openclaw/openclaw:2026.2.9
-        command: ["openclaw"]
-        args: ["gateway", "--foreground"]
+        command: ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789", "--allow-unconfigured"]
+        workingDir: /app
         ports:
         - containerPort: 18789
           protocol: TCP
