@@ -8,3 +8,4 @@ resources:
   - pihole
   - audiobookshelf
   - n8n
+  - openclaw
