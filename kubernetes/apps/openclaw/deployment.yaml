@@ -15,6 +15,40 @@ spec:
       labels:
         app: openclaw
     spec:
+      serviceAccountName: openclaw
+      initContainers:
+      - name: configure-trusted-proxy
+        image: curlimages/curl:8.12.1
+        command:
+        - /bin/sh
+        - -c
+        - |
+          CA=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+          APISERVER=https://kubernetes.default.svc
+          RESP=$(curl -s --cacert "$CA" -H "Authorization: Bearer $TOKEN" \
+            "$APISERVER/api/v1/namespaces/traefik/endpoints/traefik")
+          TRAEFIK_IP=$(echo "$RESP" | grep -o '"ip": *"[0-9.]*"' | head -1 | grep -o '[0-9.]*')
+          if [ -z "$TRAEFIK_IP" ]; then
+            echo "WARN: Could not resolve Traefik pod IP, skipping trustedProxies update"
+            echo "API response: $RESP"
+            exit 0
+          fi
+          echo "Resolved Traefik pod IP: $TRAEFIK_IP"
+          CONFIG="/home/node/.openclaw/openclaw.json"
+          if [ ! -f "$CONFIG" ]; then
+            echo '{}' > "$CONFIG"
+          fi
+          if grep -q '"trustedProxies"' "$CONFIG"; then
+            sed -i "s|\"trustedProxies\": \[.*\]|\"trustedProxies\": [\"$TRAEFIK_IP\"]|" "$CONFIG"
+          else
+            sed -i "s|\"gateway\": {|\"gateway\": {\n    \"trustedProxies\": [\"$TRAEFIK_IP\"],|" "$CONFIG"
+          fi
+          echo "Updated trustedProxies to $TRAEFIK_IP"
+          cat "$CONFIG"
+        volumeMounts:
+        - mountPath: /home/node/.openclaw
+          name: openclaw-data
       containers:
       - name: openclaw
         image: ghcr.io/openclaw/openclaw:2026.2.9
@@ -39,6 +73,11 @@ spec:
             secretKeyRef:
               name: openclaw-gateway-token
               key: OPENCLAW_GATEWAY_TOKEN
+        - name: TELEGRAM_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: openclaw-telegram-token
+              key: TELEGRAM_BOT_TOKEN
         - name: BROWSER_CDP_URL
           value: "http://localhost:9222"
         volumeMounts:
@@ -46,6 +85,63 @@ spec:
           name: openclaw-data
         - mountPath: /tmp
           name: tmp
+      - name: sidecar
+        image: ghcr.io/openclaw/openclaw:2026.2.9
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Sidecar started, waiting for gateway..."
+          sleep 15
+          # Warm up all non-default agents so they appear in the web UI dropdown.
+          # Uses --timeout 30 and --thinking off to keep it lightweight.
+          echo "Warming up agent sessions..."
+          for AGENT_ID in $(node -e "
+            const c = require('/home/node/.openclaw/openclaw.json');
+            (c.agents?.list || []).filter(a => a.id !== 'main').forEach(a => console.log(a.id));
+          " 2>/dev/null); do
+            echo "Pinging agent: $AGENT_ID"
+            timeout 60 node dist/index.js agent --agent "$AGENT_ID" \
+              --message "startup ping — respond in one word" \
+              --thinking off --timeout 30 2>&1 | tail -1 || true
+          done
+          echo "Agent warm-up complete, entering pairing watch loop..."
+          # Auto-approve pending device pairings
+          while true; do
+            PENDING="/home/node/.openclaw/devices/pending.json"
+            if [ -f "$PENDING" ] && [ "$(cat "$PENDING")" != "{}" ]; then
+              for REQ_ID in $(node -e "
+                const p = require('$PENDING');
+                Object.values(p).forEach(r => console.log(r.requestId));
+              " 2>/dev/null); do
+                echo "Auto-approving device pairing request: $REQ_ID"
+                node dist/index.js devices approve "$REQ_ID" 2>&1 || true
+              done
+            fi
+            sleep 5
+          done
+        workingDir: /app
+        env:
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: openclaw-api-keys
+              key: ANTHROPIC_API_KEY
+        - name: OPENCLAW_GATEWAY_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: openclaw-gateway-token
+              key: OPENCLAW_GATEWAY_TOKEN
+        volumeMounts:
+        - mountPath: /home/node/.openclaw
+          name: openclaw-data
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
       - name: chromium
         image: zenika/alpine-chrome:124
         args:
