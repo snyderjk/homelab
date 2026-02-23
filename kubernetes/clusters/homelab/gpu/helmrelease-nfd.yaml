@@ -1,0 +1,15 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: node-feature-discovery
+  namespace: gpu-system
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: node-feature-discovery
+      version: "0.17.*"
+      sourceRef:
+        kind: HelmRepository
+        name: nfd
+        namespace: gpu-system
