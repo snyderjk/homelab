@@ -20,7 +20,7 @@ spec:
       - name: ollama
         image: ollama/ollama:latest
         ports:
-        - containerPorts: 11434
+        - containerPort: 11434
         env:
         - name: OLLAMA_MODELS
           value: /models
