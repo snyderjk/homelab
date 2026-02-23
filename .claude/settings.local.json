@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(kubectl exec:*)",
+      "Bash(kubectl delete:*)",
+      "Bash(kubectl get:*)",
+      "Bash(kubectl describe:*)",
+      "WebFetch(domain:cloudnative-pg.io)",
+      "Bash(kubectl logs:*)",
+      "WebFetch(domain:openclaw.ai)",
+      "WebSearch",
+      "WebFetch(domain:docs.openclaw.ai)",
+      "WebFetch(domain:github.com)",
+      "Bash(ls:*)",
+      "WebFetch(domain:hub.docker.com)",
+      "Bash(kubectl events:*)",
+      "Bash(flux get:*)",
+      "Bash(flux reconcile kustomization:*)",
+      "Bash(kubectl kustomize:*)",
+      "Bash(kubectl run:*)",
+      "Bash(flux reconcile source git:*)",
+      "Bash(kubectl:*)"
+    ]
+  }
+}

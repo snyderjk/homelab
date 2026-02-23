@@ -1,0 +1,19 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nvidia-device-plugin
+  namespace: gpu-system
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: nvidia-device-plugin
+      version: "0.17.*"
+      sourceRef:
+        kind: HelmRepository
+        name: nvidia-device-plugin
+        namespace: gpu-system
+  values:
+    runtimeClassName: nvidia
+    nodeSelector:
+      gpu: "true"
