@@ -7,7 +7,5 @@ resources:
   - extrudelab/overlays/dev
   - pihole
   - audiobookshelf
-  - n8n
-  - openclaw
   - ollama
   - github-runner
