@@ -16,6 +16,6 @@ spec:
   dependsOn:
     - name: arc
   values:
-    githubConfigUrl: https://github.com/snyderjk
+    githubConfigUrl: https://github.com/snyderjk-org
     githubConfigSecret: github-runner-secret
     runnerScaleSetName: homelab
