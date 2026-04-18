@@ -17,8 +17,9 @@ spec:
 
   values:
     image:
-      registry: registry.bitnami.com
-      repository: bitnami/keycloak
+      registry: quay.io
+      repository: keycloak/keycloak
+      tag: "26.3.3"
 
     auth:
       adminUser: admin
