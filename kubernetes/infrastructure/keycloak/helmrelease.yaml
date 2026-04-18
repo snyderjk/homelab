@@ -29,7 +29,7 @@ spec:
       port: 5432
       database: keycloak
       user: keycloak
-      existingSecret: keycloak-db-rw
+      existingSecret: keycloak-db-app
       existingSecretPasswodKey: password
 
     production: true
