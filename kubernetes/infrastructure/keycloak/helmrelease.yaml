@@ -20,6 +20,7 @@ spec:
       registry: quay.io
       repository: keycloak/keycloak
       tag: "26.3.3"
+      pullPolicy: IfNotPresent
 
     auth:
       adminUser: admin
@@ -29,25 +30,24 @@ spec:
     postgresql:
       enabled: false
 
-    externalDatabase:
-      host: keycloak-db-rw.keycloak.svc.cluster.local
-      port: 5432
-      database: keycloak
-      user: keycloak
-      existingSecret: keycloak-db-app
-      existingSecretPasswordKey: password
-
-    production: true
-    proxy: edge
-    proxyHeaders: "xforwarded"
-
-    ingress:
-      enabled: true
-      insgressClassName: traefik
-      hostname: keycloak.snyderhomelab.com
-      tls: true
-      annotations:
-        cert-manager.io/cluster-issuer: letsencrypt-prod
+    extraEnvVars:
+    - name: KC_DB
+      value: "postgres"
+    - name: KC_DB_URL
+      value: "jdbc:postgresql://keycloak-db-rw.keycloak.svc.cluster.local:5432/keycloak"
+    - name: KC_DB_USERNAME
+      value: "keycloak"
+    - name: KC_DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: keycloak-db-app
+          key: password
+    - name: KC_HOSTNAME
+      value: "keycloak.snyderhomelab.com"
+    - name: KC_PROXY_HEADERS
+      value: "xforwarded"
+    - name: KC_HTTP_ENABLED
+      value: "true"
 
     resources:
       requests:
