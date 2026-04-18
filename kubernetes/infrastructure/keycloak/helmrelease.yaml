@@ -34,6 +34,7 @@ spec:
 
     production: true
     proxy: edge
+    proxyHeaders: "xforwarded"
 
     ingress:
       enabled: true
