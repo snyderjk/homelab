@@ -30,7 +30,7 @@ spec:
       database: keycloak
       user: keycloak
       existingSecret: keycloak-db-app
-      existingSecretPasswodKey: password
+      existingSecretPasswordKey: password
 
     production: true
     proxy: edge
