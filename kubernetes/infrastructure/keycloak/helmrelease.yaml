@@ -16,6 +16,10 @@ spec:
       interval: 12h
 
   values:
+    image:
+      registry: registry.bitnami.com
+      repository: bitnami/keycloak
+
     auth:
       adminUser: admin
       existingSecret: keycloak-admin-credentials
