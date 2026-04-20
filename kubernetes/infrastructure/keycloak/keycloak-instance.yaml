@@ -28,6 +28,9 @@ spec:
   proxy:
     headers: xforwarded
 
+  ingress:
+    enabled: false
+
   resources:
     requests:
       cpu: 250m
