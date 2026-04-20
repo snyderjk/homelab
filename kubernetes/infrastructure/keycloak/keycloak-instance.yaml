@@ -24,6 +24,8 @@ spec:
 
   hostname:
     hostname: keycloak.snyderhomelab.com
+    httpsPort: 443
+    httpPort: 80
 
   proxy:
     headers: xforwarded
