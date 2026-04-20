@@ -9,3 +9,4 @@ resources:
   - external-secrets
   - synology-csi
   - cloudnative-pg
+  - keycloak
