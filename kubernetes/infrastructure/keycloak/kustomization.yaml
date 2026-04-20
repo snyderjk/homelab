@@ -7,4 +7,12 @@ resources:
   - keycloak-crd-realmimports.yaml
   - keycloak-operator.yaml
   - external-secret.yaml
-  - deployment.yaml
+  - keycloak-instance.yaml
+
+patches:
+  - patch: |-
+      - op: add
+        path: /metadata/namespace
+        value: keycloak
+    target:
+      kind: ServiceAccount|Role|RoleBinding|Service|Deployment

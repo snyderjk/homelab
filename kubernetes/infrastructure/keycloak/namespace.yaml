@@ -1,19 +1,4 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: keycloak-operator
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: keycloak-operator-role-binding
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: keycloak-operator-role
----
-apiVersion: v1
-kind: Namespace
-metadata:
   name: keycloak
