@@ -24,6 +24,9 @@ spec:
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
     namespace: openclaw
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: keycloak
   to:
   - group: ""
     kind: Service

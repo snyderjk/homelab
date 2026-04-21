@@ -8,6 +8,8 @@ resources:
   - keycloak-operator.yaml
   - keycloak-instance.yaml
   - httproute.yaml
+  - referencegrant.yaml
+
 
 patches:
   - patch: |-
