@@ -23,7 +23,7 @@ spec:
     httpPort: 8080
 
   hostname:
-    hostname: keycloak.snyderhomelab.com
+    hostname: https://keycloak.snyderhomelab.com
     strict: false
 
   proxy:
@@ -35,6 +35,12 @@ spec:
   additionalOptions:
   - name: hostname-backchannel-dynamic
     value: "true"
+  - name: health-enabled
+    value: "true"
+  - name: http-management-port
+    value: "9000"
+  - name: hostname-strict
+    value: "false"
 
   resources:
     requests:
