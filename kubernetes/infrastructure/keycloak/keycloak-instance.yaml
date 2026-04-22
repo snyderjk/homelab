@@ -23,10 +23,7 @@ spec:
     httpPort: 8080
 
   hostname:
-    hostname: 
-      hostname: keycloak.snyderhomelab.com
-      hostnameUrl: https://keycloak.snyderhomelab.com
-      adminUrl: https://keycloak.snyderhomelab.com
+    hostname: keycloak.snyderhomelab.com
 
   proxy:
     headers: xforwarded
