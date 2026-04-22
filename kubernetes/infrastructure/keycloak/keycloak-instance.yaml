@@ -24,12 +24,17 @@ spec:
 
   hostname:
     hostname: keycloak.snyderhomelab.com
+    strict: false
 
   proxy:
     headers: xforwarded
 
   ingress:
     enabled: false
+
+  additionalOptions:
+  - name: hostname-backchannel-dynamic
+    value: "true"
 
   resources:
     requests:
