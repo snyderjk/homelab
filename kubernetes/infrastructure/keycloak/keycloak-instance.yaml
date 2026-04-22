@@ -24,7 +24,6 @@ spec:
 
   hostname:
     hostname: https://keycloak.snyderhomelab.com
-    strict: false
 
   proxy:
     headers: xforwarded
