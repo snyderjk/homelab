@@ -52,12 +52,6 @@ spec:
         expose:
           default: false
       
-    # Access logging for debugging
-    logs:
-      access:
-        enabled: true
-        format: json
-
     # Resources
     resources:
       requests:
