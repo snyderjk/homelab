@@ -15,5 +15,3 @@ spec:
         kind: HelmRepository
         name: linkerd
         namespace: flux-system
-  values:
-    installNamespace: true

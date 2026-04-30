@@ -6,3 +6,10 @@ metadata:
     linkerd.io/inject: disabled
   labels:
     linkerd.io/is-control-plane: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: linkerd-viz
+  annotations:
+    linkerd.io/inject: disabled
