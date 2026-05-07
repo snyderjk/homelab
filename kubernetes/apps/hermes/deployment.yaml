@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-agent
+  namespace: hermes
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate 
+  selector:
+    matchLabels:
+      app: hermes
+  template:
+    metadata:
+      labels:
+        app: hermes
+    spec:
+      securityContext:
+        fsGroup: 10000 
+      containers:
+      - name: hermes
+        image: nousresearch/hermes-agent:latest
+        command: ["/bin/sh", "-c"]
+        args: ["/opt/hermes/docker/entrypoint.sh gateway run"]
+        env:
+        - name: HERMES_DASHBOARD
+          value: "1"
+        - name: API_SERVER_ENABLED
+          value: "true"
+        - name: DISCORD_REQUIRE_MENTION
+          value: "true"
+        envFrom:
+        - secretRef:
+            name: hermes-secrets
+        ports:
+        - containerPort: 9119
+          name: dashboard
+        - containerPort: 8642
+          name: api
+        volumeMounts:
+        - name: data-storage
+          mountPath: /opt/data
+      volumes:
+      - name: data-storage
+        persistentVolumeClaim:
+          claimName: hermes-data-pvc

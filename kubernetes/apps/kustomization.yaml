@@ -9,3 +9,5 @@ resources:
   - audiobookshelf
   - ollama
   - github-runner
+  - hermes
+
