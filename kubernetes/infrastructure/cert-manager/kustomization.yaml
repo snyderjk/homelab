@@ -9,3 +9,4 @@ resources:
   - clusterissuer-letsencrypt.yaml
   - certificate-snyderhomelab.yaml
   - issuer-linkerd.yaml
+  - trust-anchor-linkerd.yaml
