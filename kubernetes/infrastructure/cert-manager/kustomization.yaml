@@ -8,3 +8,4 @@ resources:
   - clusterissuer-selfsigned.yaml
   - clusterissuer-letsencrypt.yaml
   - certificate-snyderhomelab.yaml
+  - issuer-linkerd.yaml
