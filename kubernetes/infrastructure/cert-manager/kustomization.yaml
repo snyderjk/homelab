@@ -10,3 +10,4 @@ resources:
   - certificate-snyderhomelab.yaml
   - issuer-linkerd.yaml
   - trust-anchor-linkerd.yaml
+  - identity-issuer-linkerd.yaml
