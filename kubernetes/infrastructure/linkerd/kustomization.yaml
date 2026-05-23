@@ -5,3 +5,4 @@ resources:
   - helm-repository.yaml
   - helmrelease-crds.yaml
   - certificate.yaml
+  - helmrelease-control-plane.yaml
