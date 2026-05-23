@@ -14,7 +14,7 @@ spec:
       version: "2026.5.3"
       sourceRef:
         kind: HelmRepository
-        name: linkerd-viz
+        name: linkerd
         namespace: flux-system
       interval: 12h
   values:
