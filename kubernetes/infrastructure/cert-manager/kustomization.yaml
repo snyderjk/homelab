@@ -11,3 +11,4 @@ resources:
   - issuer-linkerd.yaml
   - trust-anchor-linkerd.yaml
   - identity-issuer-linkerd.yaml
+  - linkerd-trust-bundle.yaml
