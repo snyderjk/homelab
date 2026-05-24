@@ -27,6 +27,9 @@ spec:
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
     namespace: keycloak
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: linkerd-viz
   to:
   - group: ""
     kind: Service
