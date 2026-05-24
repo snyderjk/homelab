@@ -21,3 +21,5 @@ spec:
     prometheus:
       enabled: false
     prometheusUrl: "http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/"
+    web:
+      enforcedHostRegexp: "^(localhost|127\\.0\\.0\\.1|web\\.linkerd-viz\\.svc\\.cluster\\.local|web\\.linkerd-viz\\.svc|\\[::1\\]|linkerd\\.snyderhomelab\\.com)(:\\d+)?$"
