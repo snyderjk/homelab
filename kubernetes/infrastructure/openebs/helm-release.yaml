@@ -19,3 +19,12 @@ spec:
       enabled: true
       isDefaultClass: false
       basePath: "/var/openebs/local"
+    engines:
+      local:
+        lvm:
+          enabled: false
+        zfs:
+          enabled: false
+      replicated:
+        mayastor:
+          enabled: false
