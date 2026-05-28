@@ -28,3 +28,7 @@ spec:
       replicated:
         mayastor:
           enabled: false
+    loki:
+      enabled: false
+    preUpgradeHook:
+      enabled: false
