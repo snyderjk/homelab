@@ -8,7 +8,7 @@ spec:
   interval: 30m
   chart:
     spec:
-      chart: localpv-provisioner
+      chart: openebs
       version: "4.5.0"
       sourceRef:
         kind: HelmRepository
