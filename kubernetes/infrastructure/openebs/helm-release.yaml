@@ -1,10 +1,10 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: openebs-localpv
-  namespace: kube-system
+  name: openebs
+  namespace: openebs
 spec:
-  releaseName: openebs-localpv
+  releaseName: openebs
   interval: 30m
   chart:
     spec:
