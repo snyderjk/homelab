@@ -12,3 +12,4 @@ resources:
   - keycloak
   - linkerd
   - local-path-provisioner
+  - nats
