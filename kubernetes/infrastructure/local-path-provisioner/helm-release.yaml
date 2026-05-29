@@ -2,10 +2,10 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: local-path-provisioner
-  namespace: flux-system
+  namespace: local-path-provisioner
 spec:
   interval: 30m
-  targetNamespace: local-path-storage
+  targetNamespace: local-path-provisioner
   install:
     createNamespace: true
   chart:
