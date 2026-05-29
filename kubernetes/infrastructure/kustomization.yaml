@@ -11,4 +11,3 @@ resources:
   - cloudnative-pg
   - keycloak
   - linkerd
-  - openebs
