@@ -11,3 +11,4 @@ resources:
   - cloudnative-pg
   - keycloak
   - linkerd
+  - local-path-provisioner
