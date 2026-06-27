@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: super-productivity
+  namespace: super-productivity
+  labels:
+    app: super-productivity
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: super-productivity
+  template:
+    metadata:
+      labels:
+        app: super-productivity
+    spec:
+      containers:
+      - name: web
+        image: johannesjo/super-productivity:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          limits:
+            memory: "256Mi"
+          requests:
+            cpu: "50m"
+            memory: "64Mi"

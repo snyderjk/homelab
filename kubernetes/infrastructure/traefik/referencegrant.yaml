@@ -30,6 +30,9 @@ spec:
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
     namespace: linkerd-viz
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: super-productivity
   to:
   - group: ""
     kind: Service
