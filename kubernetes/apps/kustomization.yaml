@@ -9,6 +9,6 @@ resources:
   - audiobookshelf
   - ollama
   - github-runner
-  - hermes
+#  - hermes
   - super-productivity
 
