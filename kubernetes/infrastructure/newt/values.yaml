@@ -29,6 +29,11 @@ newtInstances:
       # proxy (-> 66.63.163.125), so use https://proxy.snyderhomelab.com.
       existingSecretName: newt-credentials
       createSecret: false
+    # Newt caches its config to CONFIG_FILE; root FS is read-only, so give it an
+    # emptyDir (credentials come from the Secret every start, nothing to persist)
+    configPersistence:
+      enabled: true
+      type: emptyDir
     # Newt doesn't accept inbound client connections here, so no Service needed
     service:
       enabled: false
