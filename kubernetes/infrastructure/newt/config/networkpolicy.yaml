@@ -1,0 +1,38 @@
+# Newt is the one pod reachable from the internet (via the tunnel): lock it to
+# exactly what it needs. Anything Pangolin targets must be listed here.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: newt
+  namespace: newt
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/instance: newt
+  ingress: [] # nothing dials in; the tunnel is outbound
+  egress:
+    # DNS (to resolve the Pangolin endpoint and target hostnames)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - {port: "53", protocol: UDP}
+            - {port: "53", protocol: TCP}
+    # Pangolin VPS: control websocket (443) + Gerbil WireGuard / hole-punch (UDP)
+    - toCIDR:
+        - 66.63.163.125/32
+      toPorts:
+        - ports:
+            - {port: "443", protocol: TCP}
+            - {port: "51820", protocol: UDP}
+            - {port: "21820", protocol: UDP}
+    # Istio gateway (all public hostnames route through it)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: istio-ingress
+            gateway.networking.k8s.io/gateway-name: homelab
+      toPorts:
+        - ports:
+            - {port: "443", protocol: TCP}

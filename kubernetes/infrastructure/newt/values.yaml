@@ -1,0 +1,34 @@
+# fosrl/newt Helm values (charts.fossorial.io, chart 1.5.0 / Newt 1.12.5)
+# Newt dials OUT to Pangolin (66.63.163.125) over WireGuard; Pangolin resources
+# target the Istio gateway: https://homelab-istio.istio-ingress.svc.cluster.local:443
+# with "TLS Server Name" = the public hostname (gateway routes by SNI).
+global:
+  # Container securityContext (chart schema rejects nested pod-level seccompProfile).
+  # Setting it replaces the chart default, so restate all of it — PSA "restricted".
+  securityContext:
+    runAsUser: 65534
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: [ALL]
+    seccompProfile:
+      type: RuntimeDefault
+
+newtInstances:
+  - name: main-tunnel
+    enabled: true
+    replicas: 1 # one site connection; Pangolin doesn't load-balance multiple Newts per site ID
+    auth:
+      # Created by hand (never in git):
+      #   kubectl -n newt create secret generic newt-credentials \
+      #     --from-literal=PANGOLIN_ENDPOINT=https://proxy.snyderhomelab.com \
+      #     --from-literal=NEWT_ID=... --from-literal=NEWT_SECRET=...
+      # PANGOLIN_ENDPOINT must be a name that resolves to the VPS *from inside the
+      # cluster*. pfSense split DNS sends *.snyderhomelab.com to 10.77.1.201 except
+      # proxy (-> 66.63.163.125), so use https://proxy.snyderhomelab.com.
+      existingSecretName: newt-credentials
+      createSecret: false
+    # Newt doesn't accept inbound client connections here, so no Service needed
+    service:
+      enabled: false

@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: newt
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5" # after the gateway
+spec:
+  project: default
+  sources:
+    - repoURL: https://charts.fossorial.io
+      chart: newt
+      targetRevision: 1.5.0
+      helm:
+        releaseName: newt
+        valueFiles:
+          - $values/kubernetes/infrastructure/newt/values.yaml
+    # CiliumNetworkPolicy (egress allowlist)
+    - repoURL: https://github.com/snyderjk/homelab
+      targetRevision: main
+      path: kubernetes/infrastructure/newt/config
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: newt
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    managedNamespaceMetadata:
+      labels:
+        pod-security.kubernetes.io/enforce: restricted
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m
