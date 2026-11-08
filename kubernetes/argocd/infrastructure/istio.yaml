@@ -1,0 +1,71 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: istio
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-12"
+  # No resources-finalizer: deleting this Application must not tear down the mesh
+spec:
+  project: default
+  # Istio ambient: base (CRDs) + istiod + istio-cni + ztunnel, one version, one app.
+  sources:
+    - repoURL: https://istio-release.storage.googleapis.com/charts
+      chart: base
+      targetRevision: 1.30.8
+      helm:
+        releaseName: istio-base
+        valueFiles: [$values/kubernetes/infrastructure/istio/values-base.yaml]
+    - repoURL: https://istio-release.storage.googleapis.com/charts
+      chart: istiod
+      targetRevision: 1.30.8
+      helm:
+        releaseName: istiod
+        valueFiles: [$values/kubernetes/infrastructure/istio/values-istiod.yaml]
+    - repoURL: https://istio-release.storage.googleapis.com/charts
+      chart: cni
+      targetRevision: 1.30.8
+      helm:
+        releaseName: istio-cni
+        valueFiles: [$values/kubernetes/infrastructure/istio/values-cni.yaml]
+    - repoURL: https://istio-release.storage.googleapis.com/charts
+      chart: ztunnel
+      targetRevision: 1.30.8
+      helm:
+        releaseName: ztunnel
+        valueFiles: [$values/kubernetes/infrastructure/istio/values-ztunnel.yaml]
+    - repoURL: https://github.com/snyderjk/homelab
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: istio-system
+  # istiod patches these at runtime (CA bundle injection, validator failurePolicy)
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jqPathExpressions:
+        - .webhooks[]?.clientConfig.caBundle
+        - .webhooks[]?.failurePolicy
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jqPathExpressions:
+        - .webhooks[]?.clientConfig.caBundle
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    managedNamespaceMetadata:
+      labels:
+        # istio-cni and ztunnel need host networking / privileged access
+        pod-security.kubernetes.io/enforce: privileged
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m

@@ -1,0 +1,7 @@
+# istio/cni — ambient traffic redirection, chained onto Cilium's CNI config
+# (Cilium has cni.exclusive=false so it leaves this alone).
+profile: ambient
+# Talos uses the standard paths (verified: /etc/cni/net.d/05-cilium.conflist, /opt/cni/bin);
+# set explicitly so nothing platform-specific gets auto-picked.
+cniBinDir: /opt/cni/bin
+cniConfDir: /etc/cni/net.d

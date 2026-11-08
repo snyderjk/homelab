@@ -1,0 +1,2 @@
+# istio/ztunnel — per-node L4 proxy for ambient mesh (mTLS between enrolled pods)
+{}

@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: istio-gateway
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10" # after Istio (GatewayClass "istio" is created by istiod)
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/snyderjk/homelab
+    targetRevision: main
+    path: kubernetes/infrastructure/istio/gateway
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: istio-ingress
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 5m

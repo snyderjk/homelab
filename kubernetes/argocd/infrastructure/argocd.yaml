@@ -28,3 +28,12 @@ spec:
       selfHeal: true
     syncOptions:
       - ServerSideApply=true
+      # The HTTPRoute needs Gateway API CRDs (gateway-api app); on a fresh cluster
+      # they may land after this app's first sync attempt.
+      - SkipDryRunOnMissingResource=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 5m

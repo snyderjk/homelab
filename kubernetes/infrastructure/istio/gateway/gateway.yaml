@@ -1,0 +1,32 @@
+# Main ingress for *.snyderhomelab.com. Istio deploys the proxy (Deployment + Service
+# "homelab-istio") automatically for this Gateway.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: homelab
+  namespace: istio-ingress
+spec:
+  gatewayClassName: istio
+  infrastructure:
+    annotations:
+      # Pin the LB IP: pfSense resolves *.snyderhomelab.com -> 10.77.1.201
+      lbipam.cilium.io/ips: 10.77.1.201
+  listeners:
+    - name: http
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Same # only the HTTP->HTTPS redirect route attaches here
+    - name: https
+      port: 443
+      protocol: HTTPS
+      hostname: "*.snyderhomelab.com"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: wildcard-snyderhomelab-tls
+      allowedRoutes:
+        namespaces:
+          from: All # app routes live in their own namespaces

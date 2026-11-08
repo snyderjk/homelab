@@ -1,11 +1,11 @@
 # Argo CD Helm values (argo/argo-cd chart)
 # Bootstrapped once with helm, then self-managed: kubernetes/argocd/infrastructure/argocd.yaml
 global:
-  domain: argocd.homelab.local # placeholder until ingress + cert-manager are in
+  domain: argocd.snyderhomelab.com
 
 configs:
   params:
-    # TLS will be terminated at the ingress/gateway; until then use port-forward
+    # TLS terminates at the Istio gateway (wildcard cert); argocd-server speaks plain HTTP
     server.insecure: true
   cm:
     # Lets kustomization.yaml use helmCharts: (chart + kustomize patches)
@@ -17,3 +17,15 @@ configs:
 # No SSO yet (Keycloak comes later) — local admin only
 dex:
   enabled: false
+
+# argocd.snyderhomelab.com via the Istio gateway. LAN: direct (split DNS -> .201).
+# Public: only through Pangolin (SSO in front of Argo's own login).
+server:
+  httproute:
+    enabled: true
+    parentRefs:
+      - name: homelab
+        namespace: istio-ingress
+        sectionName: https
+    hostnames:
+      - argocd.snyderhomelab.com

@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gateway-api
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-18"
+spec:
+  project: default
+  source:
+    # Standard-channel CRDs. Pinned to the version Istio is built against
+    # (istio 1.30.x go.mod: sigs.k8s.io/gateway-api v1.5.1) — bump together with Istio.
+    repoURL: https://github.com/kubernetes-sigs/gateway-api
+    targetRevision: v1.5.1
+    path: config/crd/standard
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: false # never auto-delete CRDs (would delete every Gateway/HTTPRoute)
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
