@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubelet-serving-cert-approver
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-16"
+spec:
+  project: default
+  # Approves kubelet serving-cert CSRs (Talos: machine.kubelet.extraArgs
+  # rotate-server-certificates=true). Only approves CSRs whose SANs match the node.
+  source:
+    repoURL: https://github.com/alex1989hu/kubelet-serving-cert-approver
+    targetRevision: v0.12.1
+    path: deploy
+    directory:
+      include: ha-install.yaml # pre-rendered HA manifest (2 replicas, leader election)
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kubelet-serving-cert-approver
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true

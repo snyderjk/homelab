@@ -1,0 +1,12 @@
+# kubernetes-sigs/metrics-server — CPU/memory for kubectl top, HPAs, the status dashboard.
+# Kubelet serving certs are CA-signed (Talos rotate-server-certificates +
+# kubelet-serving-cert-approver), so TLS to kubelets is verified — no --kubelet-insecure-tls.
+replicas: 2
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+defaultArgs:
+  - --cert-dir=/tmp
+  - --kubelet-preferred-address-types=InternalIP
+  - --kubelet-use-node-status-port
+  - --metric-resolution=15s

@@ -5,6 +5,10 @@ machine:
     nodeIP:
       validSubnets:
         - 10.77.1.0/24
+    # Kubelet requests a CA-signed serving cert (instead of self-signed) so
+    # metrics-server can verify it. CSRs are approved by kubelet-serving-cert-approver.
+    extraArgs:
+      rotate-server-certificates: "true"
     # Keep headroom for the OS / control plane when runners and the mesh get busy
     extraConfig:
       systemReserved:
