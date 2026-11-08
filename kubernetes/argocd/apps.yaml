@@ -1,0 +1,38 @@
+# Every folder under kubernetes/apps/ becomes an Argo CD Application
+# named after the folder, deployed into a namespace of the same name.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: apps
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/snyderjk/homelab
+        revision: main
+        directories:
+          - path: kubernetes/apps/*
+  syncPolicy:
+    # If the generator ever comes back empty (bad path, git hiccup), don't delete every app
+    preserveResourcesOnDeletion: true
+  template:
+    metadata:
+      name: "{{ .path.basename }}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/snyderjk/homelab
+        targetRevision: main
+        path: "{{ .path.path }}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ .path.basename }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

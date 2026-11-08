@@ -1,0 +1,17 @@
+# Applied to every node
+machine:
+  kubelet:
+    # MS-A2 has 4 NICs — pin the kubelet to the VLAN 77 address
+    nodeIP:
+      validSubnets:
+        - 10.77.1.0/24
+    # Keep headroom for the OS / control plane when runners and the mesh get busy
+    extraConfig:
+      systemReserved:
+        cpu: 500m
+        memory: 1Gi
+        ephemeral-storage: 1Gi
+      kubeReserved:
+        cpu: 500m
+        memory: 1Gi
+        ephemeral-storage: 1Gi

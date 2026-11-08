@@ -1,0 +1,49 @@
+# Cilium Helm values for Talos (kube-proxy replacement via KubePrism)
+# Managed by Argo CD: kubernetes/argocd/infrastructure/cilium.yaml
+# Original manual install (before Argo):
+#   helm repo add cilium https://helm.cilium.io && helm repo update
+#   helm install cilium cilium/cilium --version 1.19.10 -n kube-system -f cilium-values.yaml
+ipam:
+  mode: kubernetes
+
+kubeProxyReplacement: true
+k8sServiceHost: localhost # KubePrism
+k8sServicePort: 7445
+
+# Talos mounts cgroupv2 itself and blocks module loading from pods (no SYS_MODULE)
+cgroup:
+  autoMount:
+    enabled: false
+  hostRoot: /sys/fs/cgroup
+securityContext:
+  capabilities:
+    ciliumAgent: [CHOWN, KILL, NET_ADMIN, NET_RAW, IPC_LOCK, SYS_ADMIN, SYS_RESOURCE, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    cleanCiliumState: [NET_ADMIN, SYS_ADMIN, SYS_RESOURCE]
+
+# Talos hostDNS forwardKubeDNSToHost is on. If you enable bpf.masquerade,
+# you must also set bpf.hostLegacyRouting: true or DNS from pods breaks.
+# bpf:
+#   masquerade: true
+#   hostLegacyRouting: true
+
+# Single node at first: operator wants 2 replicas with anti-affinity; one stays
+# Pending until cp02 joins. Harmless — or set this to 1 and bump later.
+operator:
+  replicas: 2
+
+hubble:
+  # GitOps: generate Hubble TLS certs in-cluster instead of at helm-template time,
+  # otherwise every Argo render produces new certs (perpetual OutOfSync + rotation).
+  tls:
+    auto:
+      method: cronJob
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+
+# If you run Istio (sidecar or ambient) alongside Cilium, uncomment:
+# cni:
+#   exclusive: false
+# socketLB:
+#   hostNamespaceOnly: true

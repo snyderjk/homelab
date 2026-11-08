@@ -1,0 +1,23 @@
+# Root "app of apps". Applied once by hand after the helm bootstrap:
+#   kubectl apply -f kubernetes/bootstrap/root.yaml
+# It syncs everything under kubernetes/argocd/ (infra Applications + the apps ApplicationSet).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/snyderjk/homelab
+    targetRevision: main
+    path: kubernetes/argocd
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

@@ -1,0 +1,19 @@
+# Argo CD Helm values (argo/argo-cd chart)
+# Bootstrapped once with helm, then self-managed: kubernetes/argocd/infrastructure/argocd.yaml
+global:
+  domain: argocd.homelab.local # placeholder until ingress + cert-manager are in
+
+configs:
+  params:
+    # TLS will be terminated at the ingress/gateway; until then use port-forward
+    server.insecure: true
+  cm:
+    # Lets kustomization.yaml use helmCharts: (chart + kustomize patches)
+    kustomize.buildOptions: --enable-helm
+    # Default in Argo CD 3.x, pinned explicitly: tracks ownership via annotation,
+    # so operator-copied labels (e.g. CiliumIdentity) don't confuse Argo
+    application.resourceTrackingMethod: annotation
+
+# No SSO yet (Keycloak comes later) — local admin only
+dex:
+  enabled: false

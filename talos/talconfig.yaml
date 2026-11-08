@@ -1,0 +1,112 @@
+# Homelab Talos cluster — 4x Minisforum MS-A2 (Ryzen 7 7745HX, 32GB, 1TB NVMe)
+# Topology: 3 schedulable control planes + 1 worker, Cilium (kube-proxy replacement)
+clusterName: homelab
+talosVersion: v1.14.5
+kubernetesVersion: v1.37.2
+
+# Shared control-plane VIP (Talos-managed, floats between CP nodes on VLAN 77).
+# Make sure 10.77.1.5 is outside your DHCP range and unused.
+endpoint: https://10.77.1.5:6443
+
+allowSchedulingOnControlPlanes: true
+clusterPodNets:
+  - 10.244.0.0/16
+clusterSvcNets:
+  - 10.96.0.0/12
+
+# Applied to every node
+patches:
+  - "@./patches/all.yaml"
+  - "@./patches/sysctls.yaml"
+
+controlPlane:
+  schematic: &schematic
+    customization:
+      systemExtensions:
+        officialExtensions:
+          - siderolabs/amd-ucode
+          - siderolabs/realtek-firmware
+          - siderolabs/iscsi-tools
+          - siderolabs/util-linux-tools
+  patches:
+    - "@./patches/controlplane.yaml"
+    # CNI / kube-proxy are cluster-level docs — control planes only (rejected on workers)
+    - "@./patches/cilium.yaml"
+
+worker:
+  schematic: *schematic
+
+nodes:
+  - hostname: k8s-cp01
+    ipAddress: 10.77.1.10
+    controlPlane: true
+    installDiskSelector:
+      serial: YMA61T0RA26102100G # YMTC PC41Q-1TB-B (nvme0n1) — stable if more NVMe drives are added
+    nameservers:
+      - 10.77.1.1
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: 38:05:25:3a:b7:a0 # enp4s0 (2.5G RJ45) on VLAN 77
+        addresses:
+          - 10.77.1.10/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 10.77.1.1
+        dhcp: false
+        vip:
+          ip: 10.77.1.5
+
+  - hostname: k8s-cp02
+    ipAddress: 10.77.1.11
+    controlPlane: true
+    installDiskSelector:
+      serial: YMA61T0RA261020ZYM # YMTC PC41Q-1TB-B (nvme0n1)
+    nameservers:
+      - 10.77.1.1
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: 38:05:25:3a:b6:b4 # enp4s0 (2.5G RJ45) on VLAN 77
+        addresses:
+          - 10.77.1.11/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 10.77.1.1
+        dhcp: false
+        vip:
+          ip: 10.77.1.5
+
+  - hostname: k8s-cp03
+    ipAddress: 10.77.1.12
+    controlPlane: true
+    installDiskSelector:
+      serial: YMA61T0RA2610213PL # YMTC PC41Q-1TB-B (nvme0n1)
+    nameservers:
+      - 10.77.1.1
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: 38:05:25:3a:b7:80 # enp4s0 (2.5G RJ45) on VLAN 77
+        addresses:
+          - 10.77.1.12/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 10.77.1.1
+        dhcp: false
+        vip:
+          ip: 10.77.1.5
+
+  - hostname: k8s-wk01
+    ipAddress: 10.77.1.13
+    controlPlane: false
+    installDiskSelector:
+      serial: YMA61T0RA26102148L # YMTC PC41Q-1TB-B (nvme0n1)
+    nameservers:
+      - 10.77.1.1
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: 38:05:25:39:55:2e # enp4s0 (2.5G RJ45) on VLAN 77
+        addresses:
+          - 10.77.1.13/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 10.77.1.1
+        dhcp: false

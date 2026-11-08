@@ -1,0 +1,11 @@
+# Applied to control-plane nodes
+cluster:
+  etcd:
+    # Multiple NICs — make etcd peer/advertise on VLAN 77 only
+    advertisedSubnets:
+      - 10.77.1.0/24
+machine:
+  nodeLabels:
+    # CPs run workloads, so let them back LoadBalancer services / L2 announcements
+    node.kubernetes.io/exclude-from-external-load-balancers:
+      $$patch: delete

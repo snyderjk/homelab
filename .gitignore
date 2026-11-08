@@ -1,0 +1,17 @@
+# Generated Talos configs + talosconfig contain plaintext secrets
+talos/clusterconfig/*
+!talos/clusterconfig/.gitignore
+
+# Pre-talhelper leftovers and retired (old) encrypted secrets — local reference only
+talos/legacy/
+
+# Never commit decrypted SOPS files or keys
+*.dec.yaml
+*.agekey
+keys.txt
+
+# Editor / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/

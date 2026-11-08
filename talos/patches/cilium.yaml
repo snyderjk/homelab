@@ -1,0 +1,10 @@
+# Talos >= 1.14: CNI and kube-proxy live in their own documents.
+# Remove Flannel and disable kube-proxy; Cilium replaces both.
+# ($$ escapes talhelper's envsubst so this renders as `$patch: delete`)
+apiVersion: v1alpha1
+kind: KubeFlannelCNIConfig
+$$patch: delete
+---
+apiVersion: v1alpha1
+kind: KubeProxyConfig
+enabled: false
