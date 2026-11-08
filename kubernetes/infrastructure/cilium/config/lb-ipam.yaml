@@ -1,0 +1,26 @@
+# LoadBalancer IP pool for VLAN 77. Outside DHCP (10.77.1.100-199), the API VIP (.5)
+# and the node range (.10-.19). .20-.99 kept free for future static hosts.
+apiVersion: cilium.io/v2
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: vlan77
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  blocks:
+    - start: 10.77.1.200
+      stop: 10.77.1.249
+---
+# Answer ARP for LoadBalancer IPs on the VLAN 77 NIC. One node per service holds a
+# lease and answers; if that node goes away, another takes over (like the API VIP).
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: vlan77
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  loadBalancerIPs: true
+  externalIPs: false
+  interfaces:
+    - ^enp4s0$ # VLAN 77 port on all MS-A2 nodes; add the GPU laptop's NIC when it joins

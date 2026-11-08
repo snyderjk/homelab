@@ -26,10 +26,22 @@ securityContext:
 #   masquerade: true
 #   hostLegacyRouting: true
 
-# Single node at first: operator wants 2 replicas with anti-affinity; one stays
-# Pending until cp02 joins. Harmless — or set this to 1 and bump later.
+# Roll agent/operator pods automatically when cilium-config changes, so config
+# changes pushed through Argo take effect without a manual rollout restart.
+rollOutCiliumPods: true
 operator:
   replicas: 2
+  rollOutPods: true
+
+# LoadBalancer IPs: Cilium LB IPAM + L2 (ARP) announcements, replacing MetalLB.
+# Pool + announcement policy: kubernetes/infrastructure/cilium/config/
+l2announcements:
+  enabled: true
+# Each announced service holds a Lease per node; raise the API client limits
+# so lease renewals don't get throttled as the number of LB services grows.
+k8sClientRateLimit:
+  qps: 25
+  burst: 50
 
 hubble:
   # Hubble mTLS certs issued by cert-manager from the internal homelab-ca
@@ -48,8 +60,14 @@ hubble:
   ui:
     enabled: true
 
-# If you run Istio (sidecar or ambient) alongside Cilium, uncomment:
-# cni:
-#   exclusive: false
-# socketLB:
-#   hostNamespaceOnly: true
+# Istio (ambient or sidecar) alongside Cilium:
+# - don't let Cilium remove other CNI configs; istio-cni chains itself onto Cilium's
+cni:
+  exclusive: false
+# - with kube-proxy replacement, do service load-balancing for pods at the
+#   veth/tc layer instead of the pod's socket, so Istio sees the original
+#   service IP and can redirect traffic into the mesh
+socketLB:
+  hostNamespaceOnly: true
+# Gateway API is implemented by Istio, so Cilium's gatewayAPI stays disabled
+# (two controllers for the same GatewayClass/Gateways would fight).

@@ -16,8 +16,10 @@ spec:
         releaseName: cilium
         valueFiles:
           - $values/kubernetes/infrastructure/cilium/values.yaml
+    # LB IP pool + L2 announcement policy (wave 1; CRDs are created by the agent)
     - repoURL: https://github.com/snyderjk/homelab
       targetRevision: main
+      path: kubernetes/infrastructure/cilium/config
       ref: values
   destination:
     server: https://kubernetes.default.svc
