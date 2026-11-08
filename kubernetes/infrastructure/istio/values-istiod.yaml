@@ -1,11 +1,14 @@
 # istio/istiod — ambient mode (chart keys are top-level, not under pilot:)
 profile: ambient
 
-# Chart default requests 500m / 2Gi, sized for big clusters. Plenty for a homelab;
-# the HPA still scales out under load.
+# Chart default requests 500m / 2Gi, sized for big clusters. Plenty for a homelab.
 resources:
   requests:
     cpu: 100m
     memory: 512Mi
-autoscaleMin: 2 # survives a control-plane reboot without a control-plane gap
-autoscaleMax: 3
+
+# Fixed 2 replicas: survives a control-plane reboot. No HPA — there's no
+# metrics-server yet (HPA shows <unknown> and Argo marks it Degraded).
+# Revisit once monitoring/metrics-server lands.
+autoscaleEnabled: false
+replicaCount: 2
