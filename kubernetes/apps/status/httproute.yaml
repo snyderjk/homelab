@@ -1,0 +1,16 @@
+# LAN: split DNS -> gateway. Public: Pangolin resource with auth OFF (intentionally public).
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: status
+spec:
+  parentRefs:
+    - name: homelab
+      namespace: istio-ingress
+      sectionName: https
+  hostnames:
+    - status.snyderhomelab.com
+  rules:
+    - backendRefs:
+        - name: status
+          port: 80

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Homelab Status</title>
+  <meta name="description" content="Live stats from the snyderhomelab Kubernetes cluster">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%2322c55e'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Homelab Status</h1>
+      <p class="sub">Talos + Kubernetes, 4× Minisforum MS-A2</p>
+    </div>
+    <div class="live" id="live"><span class="dot"></span><span id="updated">connecting…</span></div>
+  </header>
+
+  <main>
+    <section class="tiles">
+      <div class="tile"><span class="label">Nodes ready</span><span class="value" id="t-nodes">–</span></div>
+      <div class="tile"><span class="label">Pods running</span><span class="value" id="t-pods">–</span></div>
+      <div class="tile"><span class="label">GitOps apps healthy</span><span class="value" id="t-argo">–</span></div>
+      <div class="tile"><span class="label">Warnings (1h)</span><span class="value" id="t-warn">–</span></div>
+    </section>
+
+    <section class="card">
+      <h2>Cluster capacity</h2>
+      <div class="meter-row">
+        <div class="meter" id="m-cpu"></div>
+        <div class="meter" id="m-mem"></div>
+      </div>
+      <p class="note" id="metrics-note" hidden>Live CPU/memory usage is warming up (metrics-server).</p>
+    </section>
+
+    <section class="card">
+      <h2>Nodes</h2>
+      <div class="nodes" id="nodes"></div>
+    </section>
+
+    <div class="grid2">
+      <section class="card">
+        <h2>Top namespaces by memory</h2>
+        <table class="table" id="ns">
+          <thead><tr><th>Namespace</th><th class="num">Pods</th><th class="num">CPU</th><th class="num">Memory</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>Workloads</h2>
+        <dl class="kv" id="workloads"></dl>
+        <h2 class="mt">Pods by phase</h2>
+        <dl class="kv" id="phases"></dl>
+      </section>
+    </div>
+
+    <div class="grid2">
+      <section class="card">
+        <h2>GitOps (Argo CD)</h2>
+        <p class="big" id="argo-summary">–</p>
+        <ul class="problems" id="argo-problems"></ul>
+      </section>
+
+      <section class="card">
+        <h2>Certificates</h2>
+        <table class="table" id="certs">
+          <thead><tr><th>Certificate</th><th>Issuer</th><th class="num">Expires in</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </div>
+  </main>
+
+  <footer id="footer">Refreshes every 5 seconds.</footer>
+</body>
+</html>

@@ -1,0 +1,40 @@
+# Read-only, cluster-wide, and only the kinds the dashboard summarizes.
+# Notably NOT secrets or configmaps.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: status
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: status-dashboard
+rules:
+  - apiGroups: [""]
+    resources: [nodes, pods, namespaces, events]
+    verbs: [get, list]
+  - apiGroups: [apps]
+    resources: [deployments, daemonsets, statefulsets]
+    verbs: [list]
+  - apiGroups: [metrics.k8s.io]
+    resources: [nodes, pods]
+    verbs: [list]
+  - apiGroups: [argoproj.io]
+    resources: [applications]
+    verbs: [list]
+  - apiGroups: [cert-manager.io]
+    resources: [certificates]
+    verbs: [list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: status-dashboard
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: status-dashboard
+subjects:
+  - kind: ServiceAccount
+    name: status
+    namespace: status

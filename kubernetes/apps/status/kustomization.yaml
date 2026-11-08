@@ -1,0 +1,24 @@
+# status.snyderhomelab.com: public, read-only cluster stats dashboard.
+# Stock python image + code from src/ (ConfigMap); no image to build.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: status
+labels:
+  - pairs:
+      app.kubernetes.io/name: status
+    includeSelectors: true
+resources:
+  - namespace.yaml
+  - rbac.yaml
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml
+  - networkpolicy.yaml
+configMapGenerator:
+  # hash suffix => editing src/ rolls the pods automatically
+  - name: status-app
+    files:
+      - src/server.py
+      - src/index.html
+      - src/app.js
+      - src/style.css
