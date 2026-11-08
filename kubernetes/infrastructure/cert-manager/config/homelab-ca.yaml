@@ -1,0 +1,45 @@
+# Internal CA for in-cluster mTLS / internal-only certs (Hubble, later Linkerd, etc.)
+# selfsigned ClusterIssuer -> homelab-ca root Certificate -> homelab-ca CA ClusterIssuer
+# Sync wave 1: applied after the cert-manager chart (wave 0) is healthy, so the webhook is up.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: homelab-ca
+  namespace: cert-manager
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  isCA: true
+  commonName: homelab-ca
+  subject:
+    organizations: [homelab]
+  secretName: homelab-ca
+  duration: 87600h # 10y
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Never # keep the same root key across renewals so trust doesn't break
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: selfsigned
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: homelab-ca
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  ca:
+    secretName: homelab-ca # ClusterIssuers read secrets from the cert-manager namespace

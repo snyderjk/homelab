@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-15" # after Cilium, before anything that wants certs
+spec:
+  project: default
+  sources:
+    # Chart (wave 0)
+    - repoURL: https://charts.jetstack.io
+      chart: cert-manager
+      targetRevision: v1.21.3
+      helm:
+        releaseName: cert-manager
+        valueFiles:
+          - $values/kubernetes/infrastructure/cert-manager/values.yaml
+    # Issuers + internal CA (waves 1-2, after the webhook is healthy)
+    - repoURL: https://github.com/snyderjk/homelab
+      targetRevision: main
+      path: kubernetes/infrastructure/cert-manager/config
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      # ClusterIssuer/Certificate CRDs come from the chart in this same sync
+      - SkipDryRunOnMissingResource=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

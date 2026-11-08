@@ -1,0 +1,20 @@
+# cert-manager Helm values (jetstack/cert-manager)
+# Managed by Argo CD: kubernetes/argocd/infrastructure/cert-manager.yaml
+crds:
+  enabled: true
+  keep: true # don't delete CRDs (and with them every Certificate) if the chart is removed
+
+# Control planes are schedulable and there are 3 of them — run the webhook HA so
+# a node reboot doesn't block every Certificate/Issuer apply in the cluster.
+webhook:
+  replicaCount: 2
+podDisruptionBudget:
+  enabled: true
+
+# Resolve DNS-01 TXT records against public DNS, not the cluster/LAN resolver,
+# so split-horizon DNS (pihole etc.) for snyderhomelab.com can't stall challenges.
+dns01RecursiveNameservers: "1.1.1.1:53,1.0.0.1:53"
+dns01RecursiveNameserversOnly: true
+
+# Gateway API support (config.enableGatewayAPI) gets turned on in the ingress step,
+# once the Gateway API CRDs are installed.

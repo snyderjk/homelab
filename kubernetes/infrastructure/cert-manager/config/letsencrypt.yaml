@@ -1,0 +1,46 @@
+# Public certs for *.snyderhomelab.com via Let's Encrypt, DNS-01 through Cloudflare.
+# Needs Secret cert-manager/cloudflare-api-token (key: api-token), created by hand until
+# External Secrets + Vault are in:
+#   kubectl -n cert-manager create secret generic cloudflare-api-token --from-literal=api-token='<token>'
+# Use letsencrypt-staging first; switch to prod once a staging cert issues cleanly.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: snyderjk@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token
+        selector:
+          dnsZones: [snyderhomelab.com]
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: snyderjk@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token
+        selector:
+          dnsZones: [snyderhomelab.com]
