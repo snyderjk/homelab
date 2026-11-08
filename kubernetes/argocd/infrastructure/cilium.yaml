@@ -28,3 +28,12 @@ spec:
       selfHeal: true
     syncOptions:
       - ServerSideApply=true
+      # Hubble Certificates need cert-manager's CRDs, which sync after Cilium on a
+      # fresh cluster. Skip dry-run so the CNI isn't blocked; retry picks them up.
+      - SkipDryRunOnMissingResource=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 5m

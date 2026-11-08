@@ -32,11 +32,17 @@ operator:
   replicas: 2
 
 hubble:
-  # GitOps: generate Hubble TLS certs in-cluster instead of at helm-template time,
-  # otherwise every Argo render produces new certs (perpetual OutOfSync + rotation).
+  # Hubble mTLS certs issued by cert-manager from the internal homelab-ca
+  # (kubernetes/infrastructure/cert-manager/config/homelab-ca.yaml). Never use the
+  # default "helm" method under Argo: every render would mint new certs.
+  # Only Hubble observability depends on this — pod networking does not.
   tls:
     auto:
-      method: cronJob
+      method: certmanager
+      certManagerIssuerRef:
+        group: cert-manager.io
+        kind: ClusterIssuer
+        name: homelab-ca
   relay:
     enabled: true
   ui:
