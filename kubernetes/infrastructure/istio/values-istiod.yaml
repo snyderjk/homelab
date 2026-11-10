@@ -2,13 +2,14 @@
 profile: ambient
 
 # Chart default requests 500m / 2Gi, sized for big clusters. Plenty for a homelab.
+# HPA targets 80% of the CPU *request*, so this request is also the scale-out trigger.
 resources:
   requests:
     cpu: 100m
     memory: 512Mi
 
-# Fixed 2 replicas: survives a control-plane reboot. No HPA — there's no
-# metrics-server yet (HPA shows <unknown> and Argo marks it Degraded).
-# Revisit once monitoring/metrics-server lands.
-autoscaleEnabled: false
-replicaCount: 2
+# 2 minimum: survives a control-plane reboot without a control-plane gap.
+# Scales to 3 under load (needs metrics-server, which is in place).
+autoscaleEnabled: true
+autoscaleMin: 2
+autoscaleMax: 3
