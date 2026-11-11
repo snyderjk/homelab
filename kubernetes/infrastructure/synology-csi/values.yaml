@@ -10,6 +10,14 @@ clientInfoSecret:
   create: false
   name: synology-csi-client-info
 
+images:
+  plugin:
+    # Chart 0.11.4 defaults to v1.4.0, but Synology never published that image to Docker
+    # Hub (SynologyOpenSource/synology-csi#149). v1.3.1 is the newest image and has
+    # everything used here (tlsCACert, --iscsiadm-path). Bump when v1.4.0 appears —
+    # it includes a data-integrity read fix.
+    tag: v1.3.1
+
 node:
   plugin:
     # Talos: iscsiadm comes from the siderolabs/iscsi-tools extension
