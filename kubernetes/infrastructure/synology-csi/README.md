@@ -46,7 +46,8 @@ Optional: trust `homelab-ca` on your desktop and DSM in the browser stops warnin
 Prompts for the password without echoing it; JSON is valid YAML, so special
 characters in the password need no escaping:
 ```bash
-read -rp 'DSM username: ' DSM_USER; read -rsp 'DSM password: ' DSM_PASS; echo
+printf 'DSM username: '; read -r DSM_USER
+printf 'DSM password: '; stty -echo; read -r DSM_PASS; stty echo; echo   # works in zsh and bash
 CA=$(kubectl -n cert-manager get secret homelab-ca -o jsonpath='{.data.ca\.crt}' | base64 -d)
 DSM_USER="$DSM_USER" DSM_PASS="$DSM_PASS" CA="$CA" python3 -c '
 import json, os
