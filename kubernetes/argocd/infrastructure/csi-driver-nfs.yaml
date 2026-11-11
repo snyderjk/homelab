@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: csi-driver-nfs
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-13"
+  # No resources-finalizer: deleting this Application must never take storage with it
+spec:
+  project: default
+  sources:
+    - repoURL: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
+      chart: csi-driver-nfs
+      targetRevision: 4.13.6
+      helm:
+        releaseName: csi-driver-nfs
+        valueFiles:
+          - $values/kubernetes/infrastructure/csi-driver-nfs/values.yaml
+    - repoURL: https://github.com/snyderjk/homelab
+      targetRevision: main
+      path: kubernetes/infrastructure/csi-driver-nfs/config
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m

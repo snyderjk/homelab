@@ -1,0 +1,27 @@
+# TLS cert for DSM (nas./file.snyderhomelab.com), signed by homelab-ca. Imported into
+# DSM by hand (README.md); synology-csi trusts homelab-ca via tlsCACert.
+#
+# cert-manager renews the Secret 30 days before expiry, but DSM keeps serving the
+# copy you imported — re-import when the status dashboard shows it getting close.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nas-dsm
+spec:
+  secretName: nas-dsm-tls
+  duration: 26280h # 3 years
+  renewBefore: 720h
+  commonName: nas.snyderhomelab.com
+  dnsNames:
+    - nas.snyderhomelab.com
+    - file.snyderhomelab.com # what the LAN uses for DSM in a browser
+  ipAddresses:
+    - 10.17.1.5
+  privateKey:
+    algorithm: RSA # widest DSM import compatibility
+    size: 2048
+    rotationPolicy: Always
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: homelab-ca

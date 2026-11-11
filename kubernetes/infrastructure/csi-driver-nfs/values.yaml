@@ -1,0 +1,5 @@
+# kubernetes-csi/csi-driver-nfs — dynamic subdirectories on an existing NFS share.
+# StorageClasses live in config/storageclasses.yaml.
+controller:
+  replicas: 2
+# Snapshots/VolumeSnapshotClass come later with backups

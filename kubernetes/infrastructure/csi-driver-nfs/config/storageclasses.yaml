@@ -1,0 +1,40 @@
+# NFS volumes: one subdirectory per PVC under the Synology share
+# nas.snyderhomelab.com:/volume1/kubernetes-nfs (Squash: no mapping, 10.77.1.0/24 rw).
+#
+# ReadWriteMany-capable. Use for shared/bulk files and media.
+# NOT for databases (SQLite locking over NFS is unreliable) — use nas-iscsi.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nas-nfs
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: nas.snyderhomelab.com
+  share: /volume1/kubernetes-nfs
+  # readable folder names on the NAS instead of pvc-<uuid>
+  subDir: ${pvc.metadata.namespace}/${pvc.metadata.name}
+  onDelete: delete
+reclaimPolicy: Delete
+allowVolumeExpansion: true # quota isn't enforced on NFS; size is advisory
+volumeBindingMode: Immediate
+mountOptions:
+  - nfsvers=4.1
+  - hard
+---
+# Same, but the folder is kept when the PVC is deleted.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nas-nfs-retain
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: nas.snyderhomelab.com
+  share: /volume1/kubernetes-nfs
+  subDir: ${pvc.metadata.namespace}/${pvc.metadata.name}
+  onDelete: retain
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
+mountOptions:
+  - nfsvers=4.1
+  - hard

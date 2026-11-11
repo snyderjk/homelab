@@ -1,0 +1,33 @@
+# iSCSI block volumes (ReadWriteOnce). Use for anything with a database: SQLite,
+# Postgres, etc. "nas-iscsi" is the cluster default.
+#
+# Default is Retain: deleting a PVC (or Argo pruning one) keeps the LUN in DSM —
+# clean up released volumes deliberately (kubectl get pv | grep Released).
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nas-iscsi
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: csi.san.synology.com
+parameters:
+  dsm: nas.snyderhomelab.com # must match the host in the client-info Secret
+  location: /volume1
+  fsType: ext4
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
+---
+# Same, but the LUN is deleted with the PVC — scratch/caches/test volumes.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nas-iscsi-delete
+provisioner: csi.san.synology.com
+parameters:
+  dsm: nas.snyderhomelab.com
+  location: /volume1
+  fsType: ext4
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: Immediate

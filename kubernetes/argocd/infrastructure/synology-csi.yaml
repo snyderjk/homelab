@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: synology-csi
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-13" # after cert-manager (DSM cert)
+  # No resources-finalizer: deleting this Application must never take storage with it
+spec:
+  project: default
+  sources:
+    - repoURL: https://christian-schlichtherle.github.io/synology-csi-chart
+      chart: synology-csi
+      targetRevision: 0.11.4
+      helm:
+        releaseName: synology-csi
+        valueFiles:
+          - $values/kubernetes/infrastructure/synology-csi/values.yaml
+    # StorageClasses + DSM certificate
+    - repoURL: https://github.com/snyderjk/homelab
+      targetRevision: main
+      path: kubernetes/infrastructure/synology-csi/config
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: synology-csi
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    managedNamespaceMetadata:
+      labels:
+        # node plugin is privileged (iSCSI login, mkfs, mount propagation)
+        pod-security.kubernetes.io/enforce: privileged
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m

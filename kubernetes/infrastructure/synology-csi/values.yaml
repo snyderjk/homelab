@@ -1,0 +1,30 @@
+# synology-csi (christian-schlichtherle/synology-csi-chart 0.11.4 → driver v1.4.0)
+# iSCSI LUNs on the Synology (DSM 7.2.2), one LUN per PVC, created via the DSM API.
+#
+# DSM is reached as nas.snyderhomelab.com (pfSense DNS → 10.17.1.5 today; repoint to a
+# VLAN 77 NAS port later and new logins go direct). The driver verifies DSM's TLS cert
+# (v1.3.1+): DSM serves a homelab-ca cert for that name (config/nas-certificate.yaml).
+
+# Created by hand — holds the DSM service-account password. See README.md.
+clientInfoSecret:
+  create: false
+  name: synology-csi-client-info
+
+node:
+  plugin:
+    # Talos: iscsiadm comes from the siderolabs/iscsi-tools extension
+    extraArgs:
+      - --iscsiadm-path=/usr/local/sbin/iscsiadm
+
+# StorageClasses are defined in config/storageclasses.yaml (names + allowVolumeExpansion);
+# StorageClass parameters are immutable, so they're kept out of the chart's hands.
+storageClasses:
+  iscsi-delete: {disabled: true}
+  iscsi-retain: {disabled: true}
+  nfs-delete: {disabled: true}
+  nfs-retain: {disabled: true}
+  smb-delete: {disabled: true}
+  smb-retain: {disabled: true}
+
+# VolumeSnapshotClasses/snapshotter only render once the snapshot CRDs exist
+# (added later with backups).
