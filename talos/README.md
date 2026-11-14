@@ -79,3 +79,18 @@ Adding cp02/cp03/wk01: uncomment the node in `talconfig.yaml`, fill in its MAC,
   `ip=10.77.1.10::10.77.1.1:255.255.255.0:k8s-cp01:<iface>:off`.
 - Your workstation is on 10.17.1.0/24: make sure the router allows 50000/tcp
   (talos apid) and 6443/tcp to VLAN 77.
+
+## Disk layout: shrinking EPHEMERAL (done 2026-11-14)
+MS-A2s (`patches/ms-a2-volumes.yaml`): EPHEMERAL (`/var`) capped at 200GiB, the rest of
+the system disk is the `u-local` user volume at `/var/mnt/local` (~807GB, xfs).
+
+`VolumeConfig` only applies when EPHEMERAL is first created, so a node that predates the
+patch must wipe it. One node at a time, workers first, the VIP holder last:
+```bash
+talosctl -n 10.77.1.10 etcd snapshot ~/homelab-backups/etcd-$(date +%F-%H%M).db
+talosctl -n <ip> -e <ip> reset --system-labels-to-wipe EPHEMERAL --graceful=true --reboot
+# wait: node Ready, `talosctl etcd members` back to 3 (CPs rejoin as new members),
+#       `talosctl get volumestatus EPHEMERAL u-local` ready, Argo apps Healthy
+```
+`--graceful` drains (respects PDBs: any single-replica Deployment with a minAvailable:1
+PDB blocks it) and removes a control plane from etcd before wiping. Took ~2 min per node.
