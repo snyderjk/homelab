@@ -1,0 +1,13 @@
+# Alienware laptop: Talos on the 512GB PM991a; the whole 1TB Samsung 980 is u-local
+# at /var/mnt/local — same path as the MS-A2s' local volume, so local-path/hostPath
+# config is identical across nodes. Models live in /var/mnt/local/models.
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: local
+provisioning:
+  diskSelector:
+    match: disk.serial == "S64ANG0R502061L" # Samsung SSD 980 1TB
+  minSize: 100GiB
+  grow: true
+filesystem:
+  type: xfs

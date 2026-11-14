@@ -118,3 +118,43 @@ nodes:
           - network: 0.0.0.0/0
             gateway: 10.77.1.1
         dhcp: false
+
+  # Alienware laptop (Intel + RTX 3060 Laptop 6GB) on a GL.iNet SFT1200 in Extender mode
+  # (Wi-Fi bridge via relayd: pfSense sees the router's MAC for this IP). GPU-only:
+  # tainted so nothing else lands on the slowest, least reliable link. Not in Cilium L2
+  # announcements (policy matches ^enp4s0$; this NIC is enp46s0).
+  - hostname: k8s-wk02
+    ipAddress: 10.77.1.14
+    controlPlane: false
+    installDiskSelector:
+      serial: S65ZNE1NC59295 # Samsung PM991a 512GB (nvme0n1)
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/intel-ucode
+            - siderolabs/i915
+            - siderolabs/realtek-firmware
+            - siderolabs/iscsi-tools
+            - siderolabs/util-linux-tools
+            - siderolabs/nvidia-open-gpu-kernel-modules-lts
+            - siderolabs/nvidia-container-toolkit-lts
+    patches:
+      - "@./patches/nvidia-gpu.yaml"
+      - "@./patches/wk02-volumes.yaml"
+    nodeLabels:
+      homelab.snyderhomelab.com/gpu: nvidia-rtx3060-laptop
+      homelab.snyderhomelab.com/network: wifi-bridge
+    nodeTaints:
+      nvidia.com/gpu: "true:NoSchedule"
+    nameservers:
+      - 10.77.1.1
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: 60:18:95:26:0f:64 # enp46s0 → SFT1200 LAN port
+        addresses:
+          - 10.77.1.14/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 10.77.1.1
+        dhcp: false

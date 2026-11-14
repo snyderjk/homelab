@@ -1,0 +1,12 @@
+# NVIDIA OSS driver modules. Drivers + container toolkit come from the node's schematic
+# extensions (nvidia-open-gpu-kernel-modules-lts / nvidia-container-toolkit-lts — the
+# driver versions must match).
+# Talos 1.14 docs use KernelModuleConfig documents, but talhelper (archived) can't parse
+# that kind yet; machine.kernel.modules is the equivalent legacy form.
+machine:
+  kernel:
+    modules:
+      - name: nvidia
+      - name: nvidia_uvm
+      - name: nvidia_drm
+      - name: nvidia_modeset
