@@ -8,6 +8,9 @@ crds:
 # a node reboot doesn't block every Certificate/Issuer apply in the cluster.
 webhook:
   replicaCount: 2
+# Controller: 2 replicas (leader election, one active). The PDB below (minAvailable 1)
+# with a single replica allowed 0 evictions and blocked node drains (Talos reset).
+replicaCount: 2
 podDisruptionBudget:
   enabled: true
 

@@ -38,6 +38,8 @@ worker:
 
 nodes:
   - hostname: k8s-cp01
+    patches:
+      - "@./patches/ms-a2-volumes.yaml"
     ipAddress: 10.77.1.10
     controlPlane: true
     installDiskSelector:
@@ -57,6 +59,8 @@ nodes:
           ip: 10.77.1.5
 
   - hostname: k8s-cp02
+    patches:
+      - "@./patches/ms-a2-volumes.yaml"
     ipAddress: 10.77.1.11
     controlPlane: true
     installDiskSelector:
@@ -76,6 +80,8 @@ nodes:
           ip: 10.77.1.5
 
   - hostname: k8s-cp03
+    patches:
+      - "@./patches/ms-a2-volumes.yaml"
     ipAddress: 10.77.1.12
     controlPlane: true
     installDiskSelector:
@@ -95,6 +101,8 @@ nodes:
           ip: 10.77.1.5
 
   - hostname: k8s-wk01
+    patches:
+      - "@./patches/ms-a2-volumes.yaml"
     ipAddress: 10.77.1.13
     controlPlane: false
     installDiskSelector:
