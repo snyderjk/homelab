@@ -1,0 +1,37 @@
+# Models live on gpu01's local 1TB NVMe (Talos user volume u-local), not the NAS:
+# multi-GB files, read constantly, and gpu01 sits behind a Wi-Fi bridge.
+# A static "local" PV (not hostPath) so the namespace can stay PSA "restricted".
+# The directory was created once, owned by 1000:1000:
+#   /var/mnt/local/ollama on k8s-gpu01
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ollama-models-gpu01
+spec:
+  capacity:
+    storage: 800Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-gpu01
+  volumeMode: Filesystem
+  local:
+    path: /var/mnt/local/ollama
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [k8s-gpu01]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-gpu01
+  volumeName: ollama-models-gpu01
+  resources:
+    requests:
+      storage: 800Gi

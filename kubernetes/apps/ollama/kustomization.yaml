@@ -1,0 +1,14 @@
+# Ollama on k8s-gpu01 (RTX 3060 Laptop, 6GB VRAM). In-cluster API:
+#   http://ollama.ollama.svc.cluster.local:11434
+# LAN/VPN: https://ollama.snyderhomelab.com (no Pangolin resource: the API has no auth)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ollama
+resources:
+  - namespace.yaml
+  - storage.yaml
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml
+  - networkpolicy.yaml
+  - pull-models.yaml
