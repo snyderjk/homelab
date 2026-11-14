@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nvidia-device-plugin
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-12"
+spec:
+  project: default
+  sources:
+    - repoURL: https://nvidia.github.io/k8s-device-plugin
+      chart: nvidia-device-plugin
+      targetRevision: 0.20.1
+      helm:
+        releaseName: nvidia-device-plugin
+        valueFiles:
+          - $values/kubernetes/infrastructure/nvidia-device-plugin/values.yaml
+    # RuntimeClass "nvidia" (sync-wave below the DaemonSet's runtimeClassName use)
+    - repoURL: https://github.com/snyderjk/homelab
+      targetRevision: main
+      path: kubernetes/infrastructure/nvidia-device-plugin/config
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nvidia-device-plugin
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    managedNamespaceMetadata:
+      labels:
+        # device plugin mounts /var/lib/kubelet/device-plugins (hostPath)
+        pod-security.kubernetes.io/enforce: privileged
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m

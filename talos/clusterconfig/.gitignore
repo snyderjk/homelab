@@ -3,3 +3,4 @@ talosconfig
 homelab-k8s-cp02.yaml
 homelab-k8s-cp03.yaml
 homelab-k8s-wk01.yaml
+homelab-k8s-gpu01.yaml

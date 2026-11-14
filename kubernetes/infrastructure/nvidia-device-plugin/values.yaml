@@ -1,0 +1,12 @@
+# NVIDIA k8s-device-plugin — advertises nvidia.com/gpu on GPU nodes.
+# Driver + container toolkit are Talos system extensions (k8s-gpu01's schematic),
+# not installed by this chart. No NFD here, so schedule by our own node label.
+runtimeClassName: nvidia
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: homelab.snyderhomelab.com/gpu
+              operator: Exists
+# chart default already tolerates nvidia.com/gpu:NoSchedule

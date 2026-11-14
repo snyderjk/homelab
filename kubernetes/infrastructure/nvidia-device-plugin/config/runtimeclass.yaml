@@ -1,0 +1,21 @@
+# containerd runtime "nvidia" is registered by the Talos nvidia-container-toolkit
+# extension (/etc/cri/conf.d/10-nvidia-container-runtime.part).
+#
+# scheduling: any pod with runtimeClassName: nvidia is placed on a GPU node and
+# tolerates the GPU taint automatically — apps only need:
+#   runtimeClassName: nvidia
+#   resources: {limits: {nvidia.com/gpu: 1}}
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: nvidia
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1" # before the DaemonSet that uses it
+handler: nvidia
+scheduling:
+  nodeSelector:
+    homelab.snyderhomelab.com/gpu: nvidia-rtx3060-laptop
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
