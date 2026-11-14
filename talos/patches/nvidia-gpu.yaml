@@ -9,4 +9,10 @@ machine:
       - name: nvidia
       - name: nvidia_uvm
       - name: nvidia_drm
+        # Hand the panel/console to nvidia-drm (instead of simpledrm) so consoleblank can
+        # really power the lid-closed panel off. Must be a module parameter: Talos loads
+        # modules itself, so nvidia_drm.modeset=1 on the kernel cmdline is ignored.
+        parameters:
+          - modeset=1
+          - fbdev=1
       - name: nvidia_modeset

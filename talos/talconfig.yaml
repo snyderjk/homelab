@@ -140,12 +140,10 @@ nodes:
             - siderolabs/nvidia-open-gpu-kernel-modules-lts
             - siderolabs/nvidia-container-toolkit-lts
         # UKI boot: kernel args live in the image (schematic), not machine config.
-        # The m15 R6 panel is driven by the NVIDIA GPU (iGPU hidden), but without modeset
-        # the console sits on simpledrm, which can only dim the backlight. modeset=1 hands
-        # the panel to nvidia-drm (fbdev already on) so consoleblank can really power it off
-        # (Talos defaults consoleblank=0). Lid-closed laptop: screen off after 60s idle.
+        # Lid-closed laptop: blank the console after 60s idle (Talos defaults to 0 = never).
+        # Needs nvidia_drm modeset=1 (patches/nvidia-gpu.yaml) so blanking actually powers
+        # the panel off — on simpledrm it can only dim the backlight.
         extraKernelArgs:
-          - nvidia_drm.modeset=1
           - consoleblank=60
     patches:
       - "@./patches/nvidia-gpu.yaml"
