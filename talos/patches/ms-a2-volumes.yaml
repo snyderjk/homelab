@@ -1,0 +1,22 @@
+# MS-A2 disk layout (single 1TB NVMe):
+#   EPHEMERAL (/var: containerd, kubelet, logs, etcd) capped at 200GiB  (~24GB used today)
+#   u-local  (/var/mnt/local) gets the rest (~750GB) for local storage (CNPG etc.)
+#
+# VolumeConfig only applies when EPHEMERAL is first provisioned: existing nodes must
+# wipe it to pick this up (rolling, one node at a time — see README "Shrinking EPHEMERAL").
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: EPHEMERAL
+provisioning:
+  maxSize: 200GiB
+---
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: local
+provisioning:
+  diskSelector:
+    match: system_disk
+  minSize: 100GiB
+  grow: true
+filesystem:
+  type: xfs
