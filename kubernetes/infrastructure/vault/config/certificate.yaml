@@ -1,0 +1,35 @@
+# Vault's TLS identity (API 8200 + Raft cluster 8201), signed by homelab-ca.
+# Pods read it from /vault/userconfig/vault-tls; cert-manager renews it, and Vault
+# reloads the file on SIGHUP/restart (90-day cert renewed at 2/3 → plenty of slack).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vault-tls
+spec:
+  secretName: vault-tls
+  duration: 2160h # 90d
+  renewBefore: 720h
+  commonName: vault.vault.svc
+  dnsNames:
+    - vault
+    - vault.vault
+    - vault.vault.svc
+    - vault.vault.svc.cluster.local
+    - vault-active
+    - vault-active.vault.svc
+    - vault-active.vault.svc.cluster.local
+    - vault-internal
+    - "*.vault-internal"
+    - "*.vault-internal.vault.svc"
+    - "*.vault-internal.vault.svc.cluster.local"
+    - vault.snyderhomelab.com
+  ipAddresses:
+    - 127.0.0.1
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: homelab-ca

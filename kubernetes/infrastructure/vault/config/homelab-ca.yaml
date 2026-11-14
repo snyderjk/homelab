@@ -1,0 +1,20 @@
+# homelab-ca PUBLIC certificate (cert-manager ClusterIssuer root, valid to 2036).
+# Not a secret — used to verify Vault's TLS cert. Re-copy if homelab-ca is ever rotated.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homelab-ca
+  namespace: vault
+data:
+  ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIIBkzCCATigAwIBAgIUChrWoyjOT4HTGtjwcepsZNU471owCgYIKoZIzj0EAwIw
+    JzEQMA4GA1UEChMHaG9tZWxhYjETMBEGA1UEAxMKaG9tZWxhYi1jYTAeFw0yNjEx
+    MDgxNjIwNTJaFw0zNjExMDUxNjIwNTJaMCcxEDAOBgNVBAoTB2hvbWVsYWIxEzAR
+    BgNVBAMTCmhvbWVsYWItY2EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQNfQju
+    WTaVmdTyhJ9BAOlE8GisMSYaScLO+5v5cfZZG6wpox0qlCaw+QsToQbpngFCw4yg
+    fVqqy1pd94HKhusqo0IwQDAOBgNVHQ8BAf8EBAMCAqQwDwYDVR0TAQH/BAUwAwEB
+    /zAdBgNVHQ4EFgQU9cdsUkiGS0jVzPga+SbV+Ej9GsowCgYIKoZIzj0EAwIDSQAw
+    RgIhAKI/0a+YAFygQeLzlRnJyXTlwxaru14jLI/o5WuHeY+9AiEA0Wk5cG/tnUTo
+    Vsidcke4tg3XoKEg65dOjvYr/NlPOiM=
+    -----END CERTIFICATE-----

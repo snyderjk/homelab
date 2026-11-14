@@ -1,0 +1,112 @@
+# hashicorp/vault chart 0.34.1, Vault 2.2.1 — HA Raft (3 voters), AWS KMS auto-unseal.
+# Secrets created by hand (README.md): vault-aws-creds.
+global:
+  tlsDisable: false
+
+injector:
+  enabled: false # apps get secrets via External Secrets, not the sidecar injector
+
+server:
+  image:
+    repository: hashicorp/vault
+    tag: 2.2.1
+
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {memory: 512Mi}
+
+  # PSA "restricted"
+  statefulSet:
+    securityContext:
+      pod:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      container:
+        allowPrivilegeEscalation: false
+        capabilities: {drop: [ALL]}
+
+  extraEnvironmentVars:
+    VAULT_CACERT: /vault/userconfig/vault-tls/ca.crt # vault CLI in the pod trusts homelab-ca
+  # AWS KMS auto-unseal credentials (IAM user limited to kms:Encrypt/Decrypt/DescribeKey)
+  extraSecretEnvironmentVars:
+    - {envName: AWS_ACCESS_KEY_ID, secretName: vault-aws-creds, secretKey: AWS_ACCESS_KEY_ID}
+    - {envName: AWS_SECRET_ACCESS_KEY, secretName: vault-aws-creds, secretKey: AWS_SECRET_ACCESS_KEY}
+    - {envName: AWS_REGION, secretName: vault-aws-creds, secretKey: AWS_REGION}
+
+  volumes:
+    - name: vault-tls
+      secret:
+        secretName: vault-tls # config/certificate.yaml (homelab-ca)
+  volumeMounts:
+    - name: vault-tls
+      mountPath: /vault/userconfig/vault-tls
+      readOnly: true
+
+  # Raft on iSCSI block volumes (the old cluster used NFS, which Raft dislikes)
+  dataStorage:
+    enabled: true
+    size: 10Gi
+    storageClass: nas-iscsi
+  auditStorage:
+    enabled: true
+    size: 5Gi
+    storageClass: nas-iscsi
+
+  standalone:
+    enabled: false
+  ha:
+    enabled: true
+    replicas: 3
+    # Advertise stable per-pod DNS names (in the vault-tls cert) instead of pod IPs
+    apiAddr: https://$(HOSTNAME).vault-internal:8200
+    raft:
+      enabled: true
+      setNodeId: true
+      config: |
+        ui = true
+        disable_mlock = true # recommended with integrated storage; avoids IPC_LOCK
+
+        listener "tcp" {
+          address         = "[::]:8200"
+          cluster_address = "[::]:8201"
+          tls_cert_file   = "/vault/userconfig/vault-tls/tls.crt"
+          tls_key_file    = "/vault/userconfig/vault-tls/tls.key"
+          tls_client_ca_file = "/vault/userconfig/vault-tls/ca.crt"
+          telemetry {
+            unauthenticated_metrics_access = true # Prometheus later
+          }
+        }
+
+        storage "raft" {
+          path = "/vault/data"
+          retry_join {
+            leader_api_addr     = "https://vault-0.vault-internal:8200"
+            leader_ca_cert_file = "/vault/userconfig/vault-tls/ca.crt"
+          }
+          retry_join {
+            leader_api_addr     = "https://vault-1.vault-internal:8200"
+            leader_ca_cert_file = "/vault/userconfig/vault-tls/ca.crt"
+          }
+          retry_join {
+            leader_api_addr     = "https://vault-2.vault-internal:8200"
+            leader_ca_cert_file = "/vault/userconfig/vault-tls/ca.crt"
+          }
+        }
+
+        seal "awskms" {
+          region     = "us-east-1"
+          kms_key_id = "e65746b3-f625-4554-8ad5-3b7e254b5f02" # alias/vault-homelab-vault-unseal
+        }
+
+        service_registration "kubernetes" {}
+
+        telemetry {
+          prometheus_retention_time = "30s"
+          disable_hostname = true
+        }
+
+ui:
+  enabled: true

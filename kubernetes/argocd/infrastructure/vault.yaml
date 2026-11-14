@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-8" # after cert-manager, storage, gateway
+  # No resources-finalizer: deleting this Application must never delete Vault or its data
+spec:
+  project: default
+  sources:
+    - repoURL: https://helm.releases.hashicorp.com
+      chart: vault
+      targetRevision: 0.34.1
+      helm:
+        releaseName: vault
+        valueFiles:
+          - $values/kubernetes/infrastructure/vault/values.yaml
+    # TLS cert, CA ConfigMap, HTTPRoute + BackendTLSPolicy
+    - repoURL: https://github.com/snyderjk/homelab
+      targetRevision: main
+      path: kubernetes/infrastructure/vault/config
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vault
+  # The chart's webhook-less setup has nothing Vault mutates at runtime, but Vault
+  # pods report readiness only when unsealed — sealed pods are expected before init.
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    managedNamespaceMetadata:
+      labels:
+        pod-security.kubernetes.io/enforce: restricted
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m

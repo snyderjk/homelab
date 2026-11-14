@@ -1,0 +1,14 @@
+# external-secrets chart 2.15.0 — syncs Vault KV → Kubernetes Secrets (ExternalSecret CRs).
+installCRDs: true
+replicaCount: 2
+leaderElect: true
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+webhook:
+  replicaCount: 2
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+certController:
+  replicaCount: 1
