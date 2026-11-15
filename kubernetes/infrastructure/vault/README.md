@@ -61,6 +61,18 @@ unset VT
 kubectl get clustersecretstore vault   # READY=True, "store validated"
 ```
 
+### 5. Personal admin login, then revoke root
+All doable in the UI (signed in with the root token):
+1. Policies → Create ACL policy `admin`:
+   `path "*" { capabilities = ["create","read","update","patch","delete","list","sudo"] }`
+2. Access → Auth methods → enable **userpass** → create your user → Edit user →
+   Tokens → **Generated Token's Policies**: `admin`.
+3. Sign out, sign in as yourself (Method: Username) and confirm you can open Policies.
+4. Signed in as root, open the web console (`>_`) and run `write -force auth/token/revoke-self`.
+   Remove the root token from the password manager; **keep the recovery keys**.
+
+Need root again (locked out of userpass, etc.): `vault operator generate-root` with 3 of 5 recovery keys.
+
 ## Using it from an app
 ```bash
 # write (vault CLI as above, or the UI)
@@ -90,7 +102,7 @@ kubectl -n vault delete pod vault-1   # comes back and auto-unseals via KMS
 (everything: secrets, policies, auth config) → `s3://vault-homelab-vault-backups-840296800572/snapshots/`.
 It logs in with its own Kubernetes-auth role; the only thing it can do in Vault is take a snapshot.
 
-One-time Vault setup (root token, same `v` helper as step 3):
+One-time Vault setup (admin token — your userpass login — with the `v` helper from step 3):
 ```bash
 printf 'path "sys/storage/raft/snapshot" { capabilities = ["read"] }\n' | v policy write vault-backup -
 v write auth/kubernetes/role/vault-backup \
