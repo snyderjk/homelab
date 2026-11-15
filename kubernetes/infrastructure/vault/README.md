@@ -17,6 +17,9 @@ credentials), and deactivate the old cluster's key.
 kubectl create namespace vault --dry-run=client -o yaml | kubectl apply -f -
 printf 'AWS access key id: '; read -r AKID
 printf 'AWS secret access key: '; stty -echo; read -r SAK; stty echo; echo
+# strip pasted CR/whitespace (a copied \r broke signing once: InvalidSignatureException)
+AKID=$(printf %s "$AKID" | tr -d '\r[:space:]'); SAK=$(printf %s "$SAK" | tr -d '\r[:space:]')
+echo "lengths: ${#AKID} ${#SAK}   (want: 20 40)"
 kubectl -n vault create secret generic vault-aws-creds \
   --from-literal=AWS_ACCESS_KEY_ID="$AKID" \
   --from-literal=AWS_SECRET_ACCESS_KEY="$SAK" \
