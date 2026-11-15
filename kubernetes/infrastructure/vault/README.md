@@ -85,4 +85,31 @@ kubectl -n vault exec vault-0 -- vault status
 kubectl -n vault exec vault-0 -- env VAULT_TOKEN=… vault operator raft list-peers
 kubectl -n vault delete pod vault-1   # comes back and auto-unseals via KMS
 ```
-Backups (Raft snapshots → S3 bucket `vault-homelab-vault-backups-840296800572`): next step.
+## Backups → S3
+`config/backup.yaml`: CronJob `vault-backup`, nightly 03:00 America/Chicago. Raft snapshot
+(everything: secrets, policies, auth config) → `s3://vault-homelab-vault-backups-840296800572/snapshots/`.
+It logs in with its own Kubernetes-auth role; the only thing it can do in Vault is take a snapshot.
+
+One-time Vault setup (root token, same `v` helper as step 3):
+```bash
+printf 'path "sys/storage/raft/snapshot" { capabilities = ["read"] }\n' | v policy write vault-backup -
+v write auth/kubernetes/role/vault-backup \
+  bound_service_account_names=vault-backup bound_service_account_namespaces=vault \
+  policies=vault-backup ttl=15m
+```
+Run one now instead of waiting for 03:00:
+```bash
+kubectl -n vault create job --from=cronjob/vault-backup vault-backup-manual-$(date +%s)
+kubectl -n vault logs -f job/<that job> --all-containers
+```
+**Retention** — S3 lifecycle rule on the bucket (console → bucket → Management → Create
+lifecycle rule, prefix `snapshots/`): expire current versions after 30 days, permanently
+delete noncurrent versions after 7 days.
+
+**Restore** (new or existing cluster, same KMS key): deploy Vault, init it (throwaway),
+then with that temporary root token:
+```bash
+kubectl -n vault cp vault-YYYYmmdd-HHMMSS.snap vault-0:/tmp/restore.snap
+kubectl -n vault exec -i vault-0 -- env VAULT_TOKEN=… vault operator raft snapshot restore -force /tmp/restore.snap
+```
+After restore the old cluster's recovery keys + root token apply again.
