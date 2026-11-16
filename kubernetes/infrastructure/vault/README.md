@@ -74,10 +74,21 @@ All doable in the UI (signed in with the root token):
 Need root again (locked out of userpass, etc.): `vault operator generate-root` with 3 of 5 recovery keys.
 
 ## Using it from an app
+Log in as yourself (root is revoked); the password goes over stdin, never into argv/history:
 ```bash
-# write (vault CLI as above, or the UI)
-v kv put secret/n8n/db password='…'
+printf 'Vault password: '; stty -echo; read -r VP; stty echo; echo
+VT=$(printf %s "$VP" | kubectl -n vault exec -i vault-0 -- \
+  vault write -field=token auth/userpass/login/YOURNAME password=-); unset VP
+v() { kubectl -n vault exec -i vault-0 -- env VAULT_TOKEN="$VT" vault "$@"; }
+
+# write a secret: the value comes from stdin (`key=-`), so it stays out of shell history
+printf 'value: '; stty -echo; read -r S; stty echo; echo
+printf %s "$S" | v kv put secret/n8n/db password=-; unset S
+v kv get secret/n8n/db
+
+v token revoke -self; unset VT   # done
 ```
+Several keys at once: `v kv put secret/app user=foo password=-` (only one key can be `-`), or the UI.
 ```yaml
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
