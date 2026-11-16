@@ -4,8 +4,24 @@ cluster:
     # Multiple NICs — make etcd peer/advertise on VLAN 77 only
     advertisedSubnets:
       - 10.77.1.0/24
+    # Expose metrics so Prometheus can scrape them (Talos default: 127.0.0.1 only).
+    # Plain HTTP, read-only metrics.
+    extraArgs:
+      listen-metrics-urls: http://0.0.0.0:2381
 machine:
   nodeLabels:
     # CPs run workloads, so let them back LoadBalancer services / L2 announcements
     node.kubernetes.io/exclude-from-external-load-balancers:
       $$patch: delete
+---
+# Same for controller-manager / scheduler (still HTTPS + authn/authz on 10257/10259).
+# Talos 1.14 keeps these in their own documents, not under cluster.*
+apiVersion: v1alpha1
+kind: KubeControllerManagerConfig
+extraArgs:
+  bind-address: 0.0.0.0
+---
+apiVersion: v1alpha1
+kind: KubeSchedulerConfig
+extraArgs:
+  bind-address: 0.0.0.0

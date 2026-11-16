@@ -1,0 +1,30 @@
+# Dynamic hostPath PVs on each node's u-local volume (/var/mnt/local, ~807GB NVMe on MS-A2s).
+# For data that is fast + disposable or replicated by the app itself (Prometheus, Loki, CNPG).
+# A PV is pinned to the node it was created on — if that node dies, the data is gone with it.
+image:
+  tag: v0.0.37
+helperImage:
+  tag: "1.37.0"   # chart default is busybox:latest
+
+storageClass:
+  name: local-path
+  defaultClass: false
+  reclaimPolicy: Delete
+  volumeBindingMode: WaitForFirstConsumer   # PV is created on whichever node the pod lands
+
+nodePathMap:
+  - node: DEFAULT_PATH_FOR_NON_LISTED_NODES
+    paths:
+      - /var/mnt/local/local-path-provisioner
+
+resources:
+  requests: {cpu: 10m, memory: 32Mi}
+  limits: {memory: 128Mi}
+
+configmap:
+  helperPod:
+    # allow provisioning on the GPU node too
+    tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule

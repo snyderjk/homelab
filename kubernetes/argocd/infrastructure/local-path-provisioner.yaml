@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: local-path-provisioner
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-13"
+spec:
+  project: default
+  sources:
+    # Chart isn't published to a Helm repo — use it straight from the release tag
+    - repoURL: https://github.com/rancher/local-path-provisioner
+      targetRevision: v0.0.37
+      path: deploy/chart/local-path-provisioner
+      helm:
+        releaseName: local-path-provisioner
+        valueFiles:
+          - $values/kubernetes/infrastructure/local-path-provisioner/values.yaml
+    - repoURL: https://github.com/snyderjk/homelab
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: local-path-storage
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    managedNamespaceMetadata:
+      labels:
+        # helper pods mkdir/rm on the host via hostPath
+        pod-security.kubernetes.io/enforce: privileged
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m
