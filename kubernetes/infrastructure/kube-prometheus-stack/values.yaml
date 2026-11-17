@@ -5,15 +5,17 @@ crds:
   enabled: true
 
 # --- Talos control plane (CP patch exposes these on the node IPs) ---
+# Argo CD excludes Endpoints/EndpointSlices, so the chart's static `endpoints:` lists
+# never get applied. Instead:
+#  - scheduler / controller-manager: host-network static pods → Services select them
+#    (chart default selector `component: kube-…` when endpoints is empty)
+#  - etcd is a Talos service, not a pod → config/etcd-scrapeconfig.yaml (job "kube-etcd")
 kubeEtcd:
-  endpoints: [10.77.1.10, 10.77.1.11, 10.77.1.12]
-  service: {port: 2381, targetPort: 2381}
-  serviceMonitor:
-    authorization: null   # plain-HTTP metrics listener, no auth
-kubeControllerManager:
-  endpoints: [10.77.1.10, 10.77.1.11, 10.77.1.12]
-kubeScheduler:
-  endpoints: [10.77.1.10, 10.77.1.11, 10.77.1.12]
+  enabled: true          # keeps the etcd rules + dashboard
+  service: {enabled: false}
+  serviceMonitor: {enabled: false}
+kubeControllerManager: {}
+kubeScheduler: {}
 kubeProxy:
   enabled: false   # Cilium kube-proxy replacement
 

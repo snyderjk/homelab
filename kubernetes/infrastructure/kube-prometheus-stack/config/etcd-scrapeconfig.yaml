@@ -1,0 +1,17 @@
+# etcd runs as a Talos system service (not a pod), metrics on http://<cp-ip>:2381
+# (talos/patches/controlplane.yaml). Static targets instead of chart Endpoints, which Argo excludes.
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: kube-etcd
+spec:
+  jobName: kube-etcd   # default etcd rules/dashboard match job=~".*etcd.*"
+  scheme: HTTP
+  metricsPath: /metrics
+  staticConfigs:
+    - targets: [10.77.1.10:2381, 10.77.1.11:2381, 10.77.1.12:2381]
+  relabelings:
+    - sourceLabels: [__address__]
+      regex: "([^:]+):.*"
+      targetLabel: instance
+      replacement: "$1"
