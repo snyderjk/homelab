@@ -1,0 +1,77 @@
+# kube-prometheus-stack: Prometheus + Alertmanager + Grafana + node-exporter + kube-state-metrics
+# Data on local-path (u-local NVMe). Monitoring history is disposable; losing a node loses history only.
+
+crds:
+  enabled: true
+
+# --- Talos control plane (CP patch exposes these on the node IPs) ---
+kubeEtcd:
+  endpoints: [10.77.1.10, 10.77.1.11, 10.77.1.12]
+  service: {port: 2381, targetPort: 2381}
+  serviceMonitor:
+    authorization: null   # plain-HTTP metrics listener, no auth
+kubeControllerManager:
+  endpoints: [10.77.1.10, 10.77.1.11, 10.77.1.12]
+kubeScheduler:
+  endpoints: [10.77.1.10, 10.77.1.11, 10.77.1.12]
+kubeProxy:
+  enabled: false   # Cilium kube-proxy replacement
+
+defaultRules:
+  rules:
+    kubeProxy: false
+
+prometheus:
+  prometheusSpec:
+    # pick up every ServiceMonitor/PodMonitor/rule in the cluster, not just this chart's
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+    scrapeConfigSelectorNilUsesHelmValues: false
+    retention: 15d
+    retentionSize: 40GB
+    resources:
+      requests: {cpu: 300m, memory: 2Gi}
+      limits: {memory: 4Gi}
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: [ReadWriteOnce]
+          resources: {requests: {storage: 50Gi}}
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: [ReadWriteOnce]
+          resources: {requests: {storage: 2Gi}}
+  # Receivers (ntfy/Discord/…) come later; until then alerts are visible in the
+  # Alertmanager/Grafana UIs only.
+
+grafana:
+  defaultDashboardsTimezone: America/Chicago
+  admin:
+    existingSecret: grafana-admin   # ExternalSecret from Vault secret/monitoring/grafana
+    userKey: admin-user
+    passwordKey: admin-password
+  grafana.ini:
+    server:
+      root_url: https://grafana.snyderhomelab.com
+    analytics:
+      check_for_updates: false
+      reporting_enabled: false
+  # Stateless: dashboards come from ConfigMaps (sidecar), datasources from values.
+  persistence:
+    enabled: false
+  resources:
+    requests: {cpu: 50m, memory: 256Mi}
+    limits: {memory: 512Mi}
+
+prometheusOperator:
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 512Mi}

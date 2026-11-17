@@ -1,0 +1,14 @@
+# Grafana admin login, from Vault: secret/monitoring/grafana {username, password}
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: grafana-admin
+spec:
+  refreshInterval: 1h
+  secretStoreRef: {kind: ClusterSecretStore, name: vault}
+  target: {name: grafana-admin}
+  data:
+    - secretKey: admin-user
+      remoteRef: {key: monitoring/grafana, property: username}
+    - secretKey: admin-password
+      remoteRef: {key: monitoring/grafana, property: password}
