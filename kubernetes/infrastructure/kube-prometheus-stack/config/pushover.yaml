@@ -1,0 +1,14 @@
+# Pushover credentials for Alertmanager, from Vault: secret/monitoring/pushover {user_key, token}
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: alertmanager-pushover
+spec:
+  refreshInterval: 1h
+  secretStoreRef: {kind: ClusterSecretStore, name: vault}
+  target: {name: alertmanager-pushover}
+  data:
+    - secretKey: user_key
+      remoteRef: {key: monitoring/pushover, property: user_key}
+    - secretKey: token
+      remoteRef: {key: monitoring/pushover, property: token}

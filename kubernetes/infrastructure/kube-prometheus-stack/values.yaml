@@ -45,14 +45,60 @@ prometheus:
 
 alertmanager:
   alertmanagerSpec:
+    # Pushover user key + app token (ExternalSecret config/pushover.yaml), mounted at
+    # /etc/alertmanager/secrets/alertmanager-pushover/{user_key,token}
+    secrets: [alertmanager-pushover]
     storage:
       volumeClaimTemplate:
         spec:
           storageClassName: local-path
           accessModes: [ReadWriteOnce]
           resources: {requests: {storage: 2Gi}}
-  # Receivers (ntfy/Discord/…) come later; until then alerts are visible in the
-  # Alertmanager/Grafana UIs only.
+  config:
+    global:
+      resolve_timeout: 5m
+    # chart defaults: a critical alert silences the matching warning/info, etc.
+    inhibit_rules:
+      - source_matchers: ['severity = critical']
+        target_matchers: ['severity =~ warning|info']
+        equal: [namespace, alertname]
+      - source_matchers: ['severity = warning']
+        target_matchers: ['severity = info']
+        equal: [namespace, alertname]
+      - source_matchers: ['alertname = InfoInhibitor']
+        target_matchers: ['severity = info']
+        equal: [namespace]
+      - target_matchers: ['alertname = InfoInhibitor']
+    route:
+      receiver: pushover
+      group_by: [alertname, namespace]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      routes:
+        # always-firing heartbeat / meta alerts: never notify
+        - receiver: 'null'
+          matchers: ['alertname =~ "Watchdog|InfoInhibitor"']
+        # info-level alerts stay in the UI only
+        - receiver: 'null'
+          matchers: ['severity =~ "info|none"']
+    receivers:
+      - name: 'null'
+      - name: pushover
+        pushover_configs:
+          - user_key_file: /etc/alertmanager/secrets/alertmanager-pushover/user_key
+            token_file: /etc/alertmanager/secrets/alertmanager-pushover/token
+            send_resolved: true
+            # critical = high priority (bypasses quiet hours); warning = normal
+            priority: '{{ if eq .CommonLabels.severity "critical" }}1{{ else }}0{{ end }}'
+            title: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}'
+            message: |-
+              {{ range .Alerts }}{{ if .Labels.namespace }}{{ .Labels.namespace }}: {{ end }}{{ or .Annotations.summary .Annotations.description }}
+              {{ end }}
+            url: https://alertmanager.snyderhomelab.com
+            url_title: Alertmanager
+    templates:
+      - '/etc/alertmanager/config/*.tmpl'
 
 grafana:
   defaultDashboardsTimezone: America/Chicago
