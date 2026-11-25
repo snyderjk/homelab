@@ -1,17 +1,28 @@
+# Two independent Pi-hole instances on different nodes, each with its own local NVMe volume
+# (local-path) — no NAS dependency. Both answer DNS behind 10.77.1.202, so one pod, node, or
+# the NAS failing doesn't take DNS down. pihole-0 is the primary (the only one you edit, via
+# the UI); nebula-sync copies lists/groups/local DNS from pihole-0 to pihole-1.
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: pihole
   labels: {app.kubernetes.io/name: pihole}
 spec:
-  replicas: 1
-  strategy: {type: Recreate}   # RWO volume
+  serviceName: pihole
+  replicas: 2
+  podManagementPolicy: Parallel
   selector:
     matchLabels: {app.kubernetes.io/name: pihole}
   template:
     metadata:
       labels: {app.kubernetes.io/name: pihole}
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels: {app.kubernetes.io/name: pihole}
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: pihole
           image: docker.io/pihole/pihole:2026.11.0
@@ -47,6 +58,21 @@ spec:
             seccompProfile: {type: RuntimeDefault}
           volumeMounts:
             - {name: etc, mountPath: /etc/pihole}
-      volumes:
-        - name: etc
-          persistentVolumeClaim: {claimName: pihole-etc}
+  volumeClaimTemplates:
+    - metadata:
+        name: etc
+      spec:
+        storageClassName: local-path
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 2Gi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pihole
+spec:
+  maxUnavailable: 1     # node drains take one Pi-hole at a time
+  selector:
+    matchLabels: {app.kubernetes.io/name: pihole}

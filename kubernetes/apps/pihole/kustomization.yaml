@@ -1,4 +1,5 @@
-# Pi-hole: LAN DNS + ad blocking at 10.77.1.202 (UDP/TCP 53), upstream = pfSense unbound
+# Pi-hole: DNS + ad blocking at 10.77.1.202 (UDP/TCP 53) for the user's own devices only
+# (per-device DHCP + WireGuard peers), 2 replicas on local NVMe, upstream = pfSense unbound
 # (keeps split DNS for *.snyderhomelab.com). Admin UI: https://pihole.snyderhomelab.com (LAN/VPN).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -6,8 +7,8 @@ namespace: pihole
 resources:
   - namespace.yaml
   - externalsecret.yaml
-  - storage.yaml
-  - deployment.yaml
+  - statefulset.yaml
+  - nebula-sync.yaml
   - service.yaml
   - httproute.yaml
   - networkpolicy.yaml
