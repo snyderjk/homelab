@@ -1,0 +1,86 @@
+# file.snyderhomelab.com -> Synology DSM (https://nas.snyderhomelab.com:5001), LAN + WireGuard only.
+# Browser sees the gateway's Let's Encrypt wildcard (no :5001, no homelab-ca warning);
+# gateway re-encrypts to DSM and verifies its homelab-ca cert.
+# Needs pfSense DNS: file.snyderhomelab.com -> 10.77.1.201 (or no override; wildcard covers it).
+# nas.snyderhomelab.com stays pointed straight at the NAS (synology-csi iSCSI/NFS, SMB).
+apiVersion: v1
+kind: Service
+metadata:
+  name: dsm
+  namespace: istio-ingress
+spec:
+  type: ExternalName
+  externalName: nas.snyderhomelab.com
+  ports:
+    - name: https
+      port: 5001
+      protocol: TCP
+---
+# Istio resolves the ExternalName to this host; without a ServiceEntry the gateway has no
+# cluster for it (Envoy 500 cluster_not_found).
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: nas
+  namespace: istio-ingress
+spec:
+  hosts: [nas.snyderhomelab.com]
+  location: MESH_EXTERNAL
+  resolution: DNS
+  ports:
+    - {number: 5001, name: https, protocol: HTTPS}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: dsm
+  namespace: istio-ingress
+spec:
+  parentRefs:
+    - name: homelab
+      namespace: istio-ingress
+      sectionName: https
+  hostnames:
+    - file.snyderhomelab.com
+  rules:
+    - backendRefs:
+        - name: dsm
+          port: 5001
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: dsm
+  namespace: istio-ingress
+spec:
+  targetRefs:
+    - group: networking.istio.io
+      kind: ServiceEntry
+      name: nas
+  validation:
+    caCertificateRefs:
+      - group: ""
+        kind: ConfigMap
+        name: homelab-ca
+    hostname: nas.snyderhomelab.com
+---
+# homelab-ca PUBLIC certificate (cert-manager ClusterIssuer root, valid to 2036).
+# Not a secret — used by the gateway to verify DSM (route-dsm.yaml). Re-copy if homelab-ca is ever rotated.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homelab-ca
+  namespace: istio-ingress
+data:
+  ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIIBkzCCATigAwIBAgIUChrWoyjOT4HTGtjwcepsZNU471owCgYIKoZIzj0EAwIw
+    JzEQMA4GA1UEChMHaG9tZWxhYjETMBEGA1UEAxMKaG9tZWxhYi1jYTAeFw0yNjEx
+    MDgxNjIwNTJaFw0zNjExMDUxNjIwNTJaMCcxEDAOBgNVBAoTB2hvbWVsYWIxEzAR
+    BgNVBAMTCmhvbWVsYWItY2EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQNfQju
+    WTaVmdTyhJ9BAOlE8GisMSYaScLO+5v5cfZZG6wpox0qlCaw+QsToQbpngFCw4yg
+    fVqqy1pd94HKhusqo0IwQDAOBgNVHQ8BAf8EBAMCAqQwDwYDVR0TAQH/BAUwAwEB
+    /zAdBgNVHQ4EFgQU9cdsUkiGS0jVzPga+SbV+Ej9GsowCgYIKoZIzj0EAwIDSQAw
+    RgIhAKI/0a+YAFygQeLzlRnJyXTlwxaru14jLI/o5WuHeY+9AiEA0Wk5cG/tnUTo
+    Vsidcke4tg3XoKEg65dOjvYr/NlPOiM=
+    -----END CERTIFICATE-----

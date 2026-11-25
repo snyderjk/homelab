@@ -10,4 +10,4 @@
         href: https://file.snyderhomelab.com
         icon: synology.png
         description: DSM (LAN / VPN)
-        siteMonitor: https://file.snyderhomelab.com
+        siteMonitor: https://nas.snyderhomelab.com:5001  # direct; file. goes via the gateway
