@@ -16,8 +16,10 @@ spec:
         releaseName: dcgm-exporter
         valueFiles:
           - $values/kubernetes/infrastructure/dcgm-exporter/values.yaml
+    # Grafana dashboard ConfigMap
     - repoURL: https://github.com/snyderjk/homelab
       targetRevision: main
+      path: kubernetes/infrastructure/dcgm-exporter/config
       ref: values
   destination:
     server: https://kubernetes.default.svc
