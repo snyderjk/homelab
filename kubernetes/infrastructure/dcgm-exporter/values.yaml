@@ -1,0 +1,16 @@
+# NVIDIA DCGM exporter on k8s-gpu01: GPU utilization, VRAM, temperature, power, clocks,
+# with the pod/namespace using the GPU (kubelet pod-resources). Doesn't request a GPU
+# itself, so it never takes the card away from Ollama.
+runtimeClassName: nvidia   # RuntimeClass adds the gpu01 nodeSelector + taint toleration
+securityContext:
+  runAsNonRoot: false
+  runAsUser: 0
+  # No SYS_ADMIN: that's only for DCGM_FI_PROF_* profiling counters, which GeForce/laptop
+  # GPUs don't support anyway.
+  capabilities: {drop: [ALL]}
+  allowPrivilegeEscalation: false
+  seccompProfile: {type: RuntimeDefault}
+tolerations: []            # control-plane toleration not needed; RuntimeClass handles gpu01
+serviceMonitor:
+  enabled: true
+  interval: 30s

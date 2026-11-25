@@ -73,6 +73,22 @@ grafana:
       url: http://loki.monitoring.svc:3100
       jsonData:
         maxLines: 1000
+  # Extra dashboards from grafana.com (downloaded when the Grafana pod starts)
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: grafana-com
+          folder: Community
+          type: file
+          disableDeletion: true
+          options: {path: /var/lib/grafana/dashboards/grafana-com}
+  dashboards:
+    grafana-com:
+      nvidia-dcgm:            # GPU (k8s-gpu01) via dcgm-exporter
+        gnetId: 12239
+        revision: 2
+        datasource: Prometheus
   # Stateless: dashboards come from ConfigMaps (sidecar), datasources from values.
   persistence:
     enabled: false
