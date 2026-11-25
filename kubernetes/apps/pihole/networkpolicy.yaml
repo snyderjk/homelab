@@ -1,0 +1,32 @@
+# In: DNS from anywhere that can reach 10.77.1.202 (LAN, VLANs, WireGuard) + in-cluster;
+#     web UI from the cluster (the gateway).
+# Out: upstream DNS to pfSense only; HTTP(S) for blocklist (gravity) downloads.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: pihole
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: pihole
+  ingress:
+    - fromEntities: [world, cluster]
+      toPorts:
+        - ports:
+            - {port: "53", protocol: UDP}
+            - {port: "53", protocol: TCP}
+    - fromEntities: [cluster]
+      toPorts:
+        - ports:
+            - {port: "80", protocol: TCP}
+  egress:
+    - toCIDR: [10.77.1.1/32]
+      toPorts:
+        - ports:
+            - {port: "53", protocol: UDP}
+            - {port: "53", protocol: TCP}
+    - toEntities: [world]
+      toPorts:
+        - ports:
+            - {port: "443", protocol: TCP}
+            - {port: "80", protocol: TCP}

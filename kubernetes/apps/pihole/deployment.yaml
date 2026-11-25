@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pihole
+  labels: {app.kubernetes.io/name: pihole}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}   # RWO volume
+  selector:
+    matchLabels: {app.kubernetes.io/name: pihole}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: pihole}
+    spec:
+      containers:
+        - name: pihole
+          image: docker.io/pihole/pihole:2026.11.0
+          env:
+            - {name: TZ, value: America/Chicago}
+            # FTLCONF_* settings are enforced from here (shown read-only in the UI)
+            - {name: FTLCONF_dns_upstreams, value: "10.77.1.1"}      # pfSense unbound
+            - {name: FTLCONF_dns_listeningMode, value: "ALL"}        # clients on other VLANs + WireGuard
+            - name: FTLCONF_webserver_api_password
+              valueFrom:
+                secretKeyRef: {name: pihole-admin, key: password}
+          ports:
+            - {name: dns-udp, containerPort: 53, protocol: UDP}
+            - {name: dns-tcp, containerPort: 53, protocol: TCP}
+            - {name: http, containerPort: 80, protocol: TCP}
+          readinessProbe:
+            tcpSocket: {port: dns-tcp}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /admin/, port: http}
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          securityContext:
+            # start.sh uses capsh to drop to the pihole user with only the caps FTL needs;
+            # no_new_privs (allowPrivilegeEscalation: false) can interfere, so leave it at default
+            seccompProfile: {type: RuntimeDefault}
+          volumeMounts:
+            - {name: etc, mountPath: /etc/pihole}
+      volumes:
+        - name: etc
+          persistentVolumeClaim: {claimName: pihole-etc}

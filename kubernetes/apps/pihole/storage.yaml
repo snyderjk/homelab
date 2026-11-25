@@ -1,0 +1,12 @@
+# /etc/pihole: pihole.toml, gravity.db (lists, groups, clients), query log DB.
+# On the NAS so the pod can move between nodes.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pihole-etc
+spec:
+  storageClassName: nas-iscsi
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi

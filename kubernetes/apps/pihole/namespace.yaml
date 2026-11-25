@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pihole
+  labels:
+    # Pi-hole's entrypoint starts as root and FTL drops to the pihole user — baseline, not restricted
+    pod-security.kubernetes.io/enforce: baseline
