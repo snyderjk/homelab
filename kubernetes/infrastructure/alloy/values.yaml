@@ -8,10 +8,19 @@ crds:
 controller:
   type: deployment
   replicas: 1
+  volumes:
+    extra:
+      - name: data
+        emptyDir: {}
 
 alloy:
   enableReporting: false
   stabilityLevel: generally-available
+  storagePath: /var/lib/alloy   # writable emptyDir (root filesystem is read-only)
+  mounts:
+    extra:
+      - name: data
+        mountPath: /var/lib/alloy
   resources:
     requests: {cpu: 50m, memory: 128Mi}
     limits: {memory: 512Mi}
