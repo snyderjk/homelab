@@ -18,6 +18,7 @@ clusterSvcNets:
 patches:
   - "@./patches/all.yaml"
   - "@./patches/sysctls.yaml"
+  - "@./patches/logging.yaml"
 
 controlPlane:
   schematic: &schematic

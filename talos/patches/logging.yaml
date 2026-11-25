@@ -1,0 +1,13 @@
+# Stream Talos service logs (machined, kubelet, etcd, containerd, apid, …) and the kernel log
+# to the talos-logs Vector DaemonSet on the same node (host network, loopback) -> Loki.
+# Logs are dropped while Vector isn't running (early boot, or the pod being replaced).
+machine:
+  logging:
+    destinations:
+      - endpoint: udp://127.0.0.1:6050/
+        format: json_lines
+---
+apiVersion: v1alpha1
+kind: KmsgLogConfig
+name: vector
+url: udp://127.0.0.1:6051/

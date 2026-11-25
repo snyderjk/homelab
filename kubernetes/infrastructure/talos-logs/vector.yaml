@@ -1,0 +1,101 @@
+# Talos machine logs -> Loki.
+# Talos has no journald/files to tail; it streams its own service logs (machined, kubelet,
+# etcd, containerd, apid, …) and the kernel log as JSON lines over UDP
+# (talos/patches/logging.yaml -> udp://127.0.0.1:6050 and :6051). A Vector pod on each node
+# (host network, loopback only) receives them and pushes to Loki with job="talos", node=<name>.
+# Alloy has no raw UDP log receiver, hence Vector for this one job.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: talos-logs-vector
+data:
+  vector.yaml: |
+    data_dir: /var/lib/vector
+    api: {enabled: false}
+    sources:
+      talos_service:
+        type: socket
+        mode: udp
+        address: 127.0.0.1:6050
+        decoding: {codec: json}
+      talos_kernel:
+        type: socket
+        mode: udp
+        address: 127.0.0.1:6051
+        decoding: {codec: json}
+    transforms:
+      service:
+        type: remap
+        inputs: [talos_service]
+        source: |
+          .service = string(."talos-service") ?? "unknown"
+          .level = downcase(string(."talos-level") ?? "info")
+          .message = string(.msg) ?? encode_json(.)
+          del(."talos-service"); del(."talos-level"); del(."talos-time"); del(.msg)
+          del(.host); del(.port); del(.source_type)
+      kernel:
+        type: remap
+        inputs: [talos_kernel]
+        source: |
+          .service = "kernel"
+          .level = downcase(string(."talos-level") ?? "info")
+          .message = string(.msg) ?? encode_json(.)
+          del(."talos-level"); del(."talos-time"); del(.msg)
+          del(.host); del(.port); del(.source_type)
+    sinks:
+      loki:
+        type: loki
+        inputs: [service, kernel]
+        endpoint: http://loki.monitoring.svc:3100
+        encoding:
+          codec: text            # the log line itself; service/level/node are labels
+        labels:
+          job: talos
+          node: "${NODE_NAME}"
+          service: "{{ service }}"
+          level: "{{ level }}"
+        out_of_order_action: accept
+        healthcheck: {enabled: false}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: talos-logs
+  labels: {app.kubernetes.io/name: talos-logs}
+spec:
+  selector:
+    matchLabels: {app.kubernetes.io/name: talos-logs}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: talos-logs}
+    spec:
+      hostNetwork: true                   # Talos sends to 127.0.0.1 on the node
+      dnsPolicy: ClusterFirstWithHostNet  # still resolve loki.monitoring.svc
+      priorityClassName: system-node-critical
+      tolerations:
+        - operator: Exists                # every node, incl. the tainted GPU node
+      containers:
+        - name: vector
+          image: docker.io/timberio/vector:0.61.0-alpine
+          args: [--config, /etc/vector/vector.yaml]
+          env:
+            - name: NODE_NAME
+              valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+            capabilities: {drop: [ALL]}
+            seccompProfile: {type: RuntimeDefault}
+          volumeMounts:
+            - {name: config, mountPath: /etc/vector, readOnly: true}
+            - {name: data, mountPath: /var/lib/vector}
+      volumes:
+        - name: config
+          configMap: {name: talos-logs-vector}
+        - name: data
+          emptyDir: {}
