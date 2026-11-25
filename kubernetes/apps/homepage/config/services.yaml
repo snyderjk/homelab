@@ -1,0 +1,13 @@
+# Cluster apps come from gethomepage.dev/* annotations on their HTTPRoutes.
+# Only things outside the cluster go here.
+- Network:
+    - pfSense:
+        href: https://10.17.1.1
+        icon: pfsense.png
+        description: Firewall / DHCP / WireGuard (LAN / VPN)
+        siteMonitor: https://10.17.1.1
+    - Synology:
+        href: https://file.snyderhomelab.com
+        icon: synology.png
+        description: DSM (LAN / VPN)
+        siteMonitor: https://file.snyderhomelab.com

@@ -3,6 +3,17 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: pihole
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Pi-hole"
+    gethomepage.dev/group: "Services"
+    gethomepage.dev/icon: "pi-hole.png"
+    gethomepage.dev/description: "DNS ad-blocking, 2 replicas (LAN / VPN)"
+    gethomepage.dev/pod-selector: "app.kubernetes.io/name=pihole"
+    gethomepage.dev/widget.type: "pihole"
+    gethomepage.dev/widget.version: "6"
+    gethomepage.dev/widget.url: "http://pihole-web.pihole.svc"
+    gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_PIHOLE_KEY}}"
 spec:
   parentRefs:
     - name: homelab

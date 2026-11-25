@@ -1,0 +1,31 @@
+# home.snyderhomelab.com: Homepage dashboard. LAN/VPN: direct via split DNS.
+# Public: Pangolin resource with SSO ON (it lists every service + live stats).
+# Cluster apps appear via gethomepage.dev/* annotations on their HTTPRoutes (opt-in);
+# config/services.yaml is only for things outside the cluster.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: homepage
+labels:
+  - pairs:
+      app.kubernetes.io/name: homepage
+    includeSelectors: true
+resources:
+  - namespace.yaml
+  - rbac.yaml
+  - externalsecret.yaml
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml
+  - networkpolicy.yaml
+configMapGenerator:
+  # hash suffix => editing config/ rolls the pod (subPath mounts never update in place)
+  - name: homepage-config
+    files:
+      - config/settings.yaml
+      - config/widgets.yaml
+      - config/services.yaml
+      - config/kubernetes.yaml
+      - config/bookmarks.yaml
+      - config/docker.yaml
+      - config/custom.css
+      - config/custom.js

@@ -1,0 +1,23 @@
+title: Homelab
+theme: dark
+color: slate
+headerStyle: clean
+statusStyle: dot
+hideVersion: true
+disableUpdateCheck: true
+target: _self
+# Group order + layout. Discovered (annotated HTTPRoute) and services.yaml entries
+# land in these groups by name.
+layout:
+  Cluster:
+    style: row
+    columns: 3
+  Monitoring:
+    style: row
+    columns: 3
+  Services:
+    style: row
+    columns: 3
+  Network:
+    style: row
+    columns: 3

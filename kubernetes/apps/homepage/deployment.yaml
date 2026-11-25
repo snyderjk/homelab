@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homepage
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {}
+  template:
+    spec:
+      serviceAccountName: homepage
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: homepage
+          image: ghcr.io/gethomepage/homepage:v2.8.0
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef: {fieldPath: status.podIP}
+            # pod IP entry is what the kubelet probes send as Host
+            - name: HOMEPAGE_ALLOWED_HOSTS
+              value: home.snyderhomelab.com,$(MY_POD_IP):3000
+          envFrom:
+            - secretRef: {name: homepage-widgets}
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            httpGet: {path: /api/healthcheck, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /api/healthcheck, port: http}
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 20m, memory: 128Mi}
+            limits: {memory: 384Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - {name: logs, mountPath: /app/config/logs}
+            - {name: config, mountPath: /app/config/settings.yaml, subPath: settings.yaml}
+            - {name: config, mountPath: /app/config/widgets.yaml, subPath: widgets.yaml}
+            - {name: config, mountPath: /app/config/services.yaml, subPath: services.yaml}
+            - {name: config, mountPath: /app/config/kubernetes.yaml, subPath: kubernetes.yaml}
+            - {name: config, mountPath: /app/config/bookmarks.yaml, subPath: bookmarks.yaml}
+            - {name: config, mountPath: /app/config/docker.yaml, subPath: docker.yaml}
+            - {name: config, mountPath: /app/config/custom.css, subPath: custom.css}
+            - {name: config, mountPath: /app/config/custom.js, subPath: custom.js}
+      volumes:
+        - name: config
+          configMap: {name: homepage-config}
+        - name: logs
+          emptyDir: {}

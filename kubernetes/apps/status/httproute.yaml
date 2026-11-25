@@ -3,6 +3,13 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: status
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Status"
+    gethomepage.dev/group: "Cluster"
+    gethomepage.dev/icon: "mdi-heart-pulse"
+    gethomepage.dev/description: "Public cluster status page"
+    gethomepage.dev/pod-selector: "app.kubernetes.io/name=status"
 spec:
   parentRefs:
     - name: homelab
