@@ -20,6 +20,10 @@ spec:
             # FTLCONF_* settings are enforced from here (shown read-only in the UI)
             - {name: FTLCONF_dns_upstreams, value: "10.77.1.1"}      # pfSense unbound
             - {name: FTLCONF_dns_listeningMode, value: "ALL"}        # clients on other VLANs + WireGuard
+            # built-in NTP server/client: not needed (and lacks CAP_SYS_TIME in a pod)
+            - {name: FTLCONF_ntp_ipv4_active, value: "false"}
+            - {name: FTLCONF_ntp_ipv6_active, value: "false"}
+            - {name: FTLCONF_ntp_sync_active, value: "false"}
             - name: FTLCONF_webserver_api_password
               valueFrom:
                 secretKeyRef: {name: pihole-admin, key: password}

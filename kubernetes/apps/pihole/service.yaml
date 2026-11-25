@@ -1,5 +1,7 @@
-# DNS on a fixed LAN IP. externalTrafficPolicy: Local keeps the real client IP (per-client
-# stats and groups); Cilium only announces the IP from the node running the pod.
+# DNS on a fixed LAN IP. externalTrafficPolicy must be Cluster: Cilium's L2 announcement
+# picks the announcing node without regard to where the pod runs, so with Local the
+# announcing node often has no backend and refuses queries. Cost: Pi-hole sees node IPs,
+# not real client IPs (per-device stats). Fixing that needs Cilium DSR (cluster-wide).
 apiVersion: v1
 kind: Service
 metadata:
@@ -8,7 +10,7 @@ metadata:
     lbipam.cilium.io/ips: 10.77.1.202
 spec:
   type: LoadBalancer
-  externalTrafficPolicy: Local
+  externalTrafficPolicy: Cluster
   selector: {app.kubernetes.io/name: pihole}
   ports:
     - {name: dns-udp, port: 53, targetPort: dns-udp, protocol: UDP}
