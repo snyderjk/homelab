@@ -1,6 +1,6 @@
 # In: DNS from anywhere that can reach 10.77.1.202 (LAN, VLANs, WireGuard) + in-cluster;
 #     web UI from the cluster (the gateway).
-# Out: upstream DNS to pfSense only; HTTP(S) for blocklist (gravity) downloads.
+# Out: cluster DNS (pod's own lookups), upstream DNS to pfSense, HTTP(S) for blocklists.
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -20,6 +20,15 @@ spec:
         - ports:
             - {port: "80", protocol: TCP}
   egress:
+    # the pod's own lookups (gravity list downloads) use cluster DNS via resolv.conf
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - {port: "53", protocol: UDP}
+            - {port: "53", protocol: TCP}
     - toCIDR: [10.77.1.1/32]
       toPorts:
         - ports:
