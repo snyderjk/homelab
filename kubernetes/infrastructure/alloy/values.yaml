@@ -1,0 +1,97 @@
+# Grafana Alloy: ships pod logs + Kubernetes events to Loki.
+# Reads logs through the Kubernetes API (loki.source.kubernetes), so it needs no hostPath,
+# no privileged pod, and works the same on every node incl. the tainted GPU node.
+# One replica is plenty at homelab volume (and keeps the events source from duplicating).
+crds:
+  create: false
+
+controller:
+  type: deployment
+  replicas: 1
+
+alloy:
+  enableReporting: false
+  stabilityLevel: generally-available
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 512Mi}
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities: {drop: [ALL]}
+    runAsNonRoot: true
+    runAsUser: 473
+    seccompProfile: {type: RuntimeDefault}
+  configMap:
+    content: |
+      // ---- pod logs ----
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      discovery.relabel "pods" {
+        targets = discovery.kubernetes.pods.targets
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_node_name"]
+          target_label  = "node"
+        }
+        // app = app.kubernetes.io/name, falling back to the "app" label
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name", "__meta_kubernetes_pod_label_app"]
+          separator     = ";"
+          regex         = "^;*([^;]+)(;.*)?$"
+          target_label  = "app"
+        }
+        rule {
+          source_labels = ["namespace", "container"]
+          separator     = "/"
+          target_label  = "job"
+        }
+      }
+
+      loki.source.kubernetes "pods" {
+        targets    = discovery.relabel.pods.output
+        forward_to = [loki.process.pods.receiver]
+      }
+
+      loki.process "pods" {
+        // parse CRI-free JSON / logfmt level if present, keep it as a label for filtering
+        stage.match {
+          selector = "{namespace=~\".+\"}"
+          stage.regex {
+            expression = "(?i)(?:\"level\"\\s*:\\s*\"|level=)(?P<level>debug|info|warn|warning|error|fatal|critical)"
+          }
+          stage.labels {
+            values = {level = ""}
+          }
+        }
+        forward_to = [loki.write.default.receiver]
+      }
+
+      // ---- Kubernetes events (scheduling failures, OOMKills, image pulls, …) ----
+      loki.source.kubernetes_events "events" {
+        job_name   = "kubernetes-events"
+        log_format = "logfmt"
+        forward_to = [loki.write.default.receiver]
+      }
+
+      loki.write "default" {
+        endpoint {
+          url = "http://loki.monitoring.svc:3100/loki/api/v1/push"
+        }
+      }
+
+serviceMonitor:
+  enabled: true

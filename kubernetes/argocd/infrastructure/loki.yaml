@@ -1,0 +1,36 @@
+# Log storage (single binary, filesystem on local-path)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+spec:
+  project: default
+  sources:
+    - repoURL: https://grafana.github.io/helm-charts
+      chart: loki
+      targetRevision: 7.7.0
+      helm:
+        releaseName: loki
+        valueFiles:
+          - $values/kubernetes/infrastructure/loki/values.yaml
+    - repoURL: https://github.com/snyderjk/homelab
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring   # created (privileged PSA) by the kube-prometheus-stack app
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m

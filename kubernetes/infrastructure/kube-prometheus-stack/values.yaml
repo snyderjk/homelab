@@ -66,6 +66,13 @@ grafana:
     analytics:
       check_for_updates: false
       reporting_enabled: false
+  additionalDataSources:
+    - name: Loki
+      uid: loki
+      type: loki
+      url: http://loki.monitoring.svc:3100
+      jsonData:
+        maxLines: 1000
   # Stateless: dashboards come from ConfigMaps (sidecar), datasources from values.
   persistence:
     enabled: false

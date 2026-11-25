@@ -1,0 +1,36 @@
+# Log collector: pod logs + k8s events -> Loki
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: alloy
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-4"
+spec:
+  project: default
+  sources:
+    - repoURL: https://grafana.github.io/helm-charts
+      chart: alloy
+      targetRevision: 1.16.0
+      helm:
+        releaseName: alloy
+        valueFiles:
+          - $values/kubernetes/infrastructure/alloy/values.yaml
+    - repoURL: https://github.com/snyderjk/homelab
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring   # created (privileged PSA) by the kube-prometheus-stack app
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m
