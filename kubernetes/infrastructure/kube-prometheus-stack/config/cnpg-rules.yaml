@@ -39,12 +39,13 @@ spec:
             summary: "Postgres {{ $labels.job }} cannot archive WAL to S3"
             description: "Point-in-time recovery is broken and pg_wal will grow. Check the plugin sidecar logs: kubectl -n databases logs {{ $labels.pod }} -c plugin-barman-cloud"
         - alert: CNPGWALArchivingStalled
-          # archive_timeout forces a WAL switch every 5 min, so a quiet DB still archives regularly
-          expr: max by (job) (cnpg_pg_stat_archiver_seconds_since_last_archival) > 1800
-          for: 10m
+          # Segments finished but not yet shipped to S3. (Time since last archival is useless:
+          # an idle DB writes no WAL, so archive_timeout never switches and nothing is archived.)
+          expr: max by (job) (cnpg_collector_pg_wal_archive_status{value="ready"}) > 0
+          for: 30m
           labels: {severity: warning}
           annotations:
-            summary: "Postgres {{ $labels.job }} hasn't archived WAL in {{ $value | humanizeDuration }}"
+            summary: "Postgres {{ $labels.job }} has {{ $value }} WAL segment(s) waiting to be archived for 30m+"
         - alert: CNPGBackupStale
           expr: time() - max by (job) (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp) > 26 * 3600
           for: 30m
