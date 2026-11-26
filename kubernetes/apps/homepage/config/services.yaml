@@ -2,10 +2,10 @@
 # Only things outside the cluster go here.
 - Network:
     - pfSense:
-        href: https://10.17.1.1
+        href: https://firewall.snyderhomelab.com
         icon: pfsense.png
         description: Firewall / DHCP / WireGuard (LAN / VPN)
-        siteMonitor: https://10.17.1.1
+        siteMonitor: https://firewall.snyderhomelab.com
     - Synology:
         href: https://file.snyderhomelab.com
         icon: synology.png
