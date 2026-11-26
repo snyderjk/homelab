@@ -9,6 +9,15 @@ cluster:
     extraArgs:
       listen-metrics-urls: http://0.0.0.0:2381
 machine:
+  # Lets pods in ns etcd-backup get a Talos client cert limited to etcd snapshots
+  # (talos.dev ServiceAccount, see kubernetes/infrastructure/etcd-backup)
+  features:
+    kubernetesTalosAPIAccess:
+      enabled: true
+      allowedRoles:
+        - os:etcd:backup
+      allowedKubernetesNamespaces:
+        - etcd-backup
   nodeLabels:
     # CPs run workloads, so let them back LoadBalancer services / L2 announcements
     node.kubernetes.io/exclude-from-external-load-balancers:

@@ -1,0 +1,12 @@
+# NAS NFS (Retain): /volume1/kubernetes-nfs/etcd-backup/etcd-snapshots on the Synology
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: etcd-snapshots
+  namespace: etcd-backup
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: nas-nfs-retain
+  resources:
+    requests:
+      storage: 5Gi

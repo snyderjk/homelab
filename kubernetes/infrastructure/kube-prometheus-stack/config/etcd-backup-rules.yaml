@@ -1,0 +1,23 @@
+# Alerts for kubernetes/infrastructure/etcd-backup (nightly 02:30 America/Chicago)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: etcd-backup
+  namespace: monitoring
+spec:
+  groups:
+    - name: etcd-backup
+      rules:
+        - alert: EtcdBackupStale
+          expr: time() - kube_cronjob_status_last_successful_time{namespace="etcd-backup",cronjob="etcd-backup"} > 26 * 3600
+          for: 15m
+          labels: {severity: warning}
+          annotations:
+            summary: "No successful etcd snapshot in {{ $value | humanizeDuration }}"
+            description: "kubectl -n etcd-backup get jobs; kubectl -n etcd-backup logs job/<latest> --all-containers"
+        - alert: EtcdBackupNeverSucceeded
+          expr: absent(kube_cronjob_status_last_successful_time{namespace="etcd-backup",cronjob="etcd-backup"})
+          for: 26h
+          labels: {severity: warning}
+          annotations:
+            summary: "etcd-backup CronJob has no successful run on record"

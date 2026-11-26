@@ -1,0 +1,53 @@
+# cert-manager metrics + alerts. Lives here (not in the cert-manager app) because
+# cert-manager syncs at wave -13, before the Prometheus operator CRDs exist.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cert-manager
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames: [cert-manager]
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cert-manager
+      app.kubernetes.io/component: controller
+  endpoints:
+    - port: http-metrics
+      interval: 60s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cert-manager
+  namespace: monitoring
+spec:
+  groups:
+    - name: cert-manager
+      rules:
+        - alert: CertificateExpiringSoon
+          # cert-manager renews at 2/3 of lifetime (~30d left for LE), so <14d means renewal is failing
+          expr: (certmanager_certificate_expiration_timestamp_seconds - time()) < 14 * 86400
+          for: 1h
+          labels: {severity: warning}
+          annotations:
+            summary: "Certificate {{ $labels.namespace }}/{{ $labels.name }} expires in {{ $value | humanizeDuration }}"
+            description: "Renewal is probably failing: kubectl -n {{ $labels.namespace }} describe certificate {{ $labels.name }}"
+        - alert: CertificateExpiringCritical
+          expr: (certmanager_certificate_expiration_timestamp_seconds - time()) < 3 * 86400
+          for: 15m
+          labels: {severity: critical}
+          annotations:
+            summary: "Certificate {{ $labels.namespace }}/{{ $labels.name }} expires in {{ $value | humanizeDuration }}"
+        - alert: CertificateNotReady
+          expr: certmanager_certificate_ready_status{condition="True"} == 0
+          for: 30m
+          labels: {severity: warning}
+          annotations:
+            summary: "Certificate {{ $labels.namespace }}/{{ $labels.name }} is not Ready"
+        - alert: CertManagerAbsent
+          expr: absent(up{job="cert-manager"} == 1)
+          for: 30m
+          labels: {severity: warning}
+          annotations:
+            summary: "cert-manager metrics are missing (controller down or scrape broken)"

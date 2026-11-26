@@ -1,0 +1,8 @@
+# baseline (not restricted): the job runs as uid 0 to write to the NFS share, whose
+# per-PVC dirs are created root:root 0755 and NFS ignores fsGroup. Caps are still all dropped.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: etcd-backup
+  labels:
+    pod-security.kubernetes.io/enforce: baseline

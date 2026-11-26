@@ -1,0 +1,61 @@
+# Nightly etcd snapshot -> NAS, keep the newest 14 (~45MB each).
+# Node 10.77.1.5 = API VIP, so it follows whichever control plane is healthy.
+# Restore: talos/README or `talosctl -n <cp> bootstrap --recover-from=./etcd-....db`.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcd-backup
+  namespace: etcd-backup
+spec:
+  schedule: "30 2 * * *"
+  timeZone: America/Chicago
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 900
+      template:
+        spec:
+          restartPolicy: Never
+          # uid 0 only to own files on the NFS share (dir is root:root 0755); no capabilities,
+          # read-only rootfs, and the Talos cert can do nothing but etcd snapshots.
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            seccompProfile: {type: RuntimeDefault}
+          initContainers:
+            # talosctl image is distroless (no shell): it only takes the snapshot
+            - name: snapshot
+              image: ghcr.io/siderolabs/talosctl:v1.14.5
+              args: ["-n", "10.77.1.5", "etcd", "snapshot", "/backup/.incoming.db"]
+              securityContext: &sc
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                - {name: talos, mountPath: /var/run/secrets/talos.dev, readOnly: true}
+                - {name: backup, mountPath: /backup}
+          containers:
+            - name: rotate
+              image: busybox:1.37.0
+              securityContext: *sc
+              command: ["/bin/sh", "-ec"]
+              args:
+                - |
+                  cd /backup
+                  size=$(stat -c %s .incoming.db)
+                  [ "$size" -gt 1000000 ] || { echo "snapshot too small: $size bytes"; exit 1; }
+                  name="etcd-$(date -u +%Y%m%d-%H%M%SZ).db"
+                  mv .incoming.db "$name"
+                  echo "saved $name ($size bytes)"
+                  ls -1t etcd-*.db | tail -n +15 | while read -r old; do echo "pruning $old"; rm -f "$old"; done
+                  ls -lh etcd-*.db
+              volumeMounts:
+                - {name: backup, mountPath: /backup}
+          volumes:
+            - name: talos
+              secret: {secretName: talos-etcd-backup}
+            - name: backup
+              persistentVolumeClaim: {claimName: etcd-snapshots}
