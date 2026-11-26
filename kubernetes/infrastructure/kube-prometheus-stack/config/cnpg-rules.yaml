@@ -1,0 +1,63 @@
+# CloudNativePG alerts (metric names verified against live pg-main, 2026-11-26).
+# job label = "<namespace>/<cluster>" (from the cluster's PodMonitor).
+# Disk: local-path PVs report no kubelet volume stats; the default NodeFilesystem* rules
+# cover /var/mnt/local on each node instead.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cnpg
+  namespace: monitoring
+spec:
+  groups:
+    - name: cnpg
+      rules:
+        - alert: CNPGInstanceDown
+          expr: cnpg_collector_up == 0
+          for: 5m
+          labels: {severity: warning}
+          annotations:
+            summary: "Postgres {{ $labels.job }} instance {{ $labels.pod }} is down"
+        - alert: CNPGReplicasMissing
+          # streaming_replicas is reported by the primary; pg-main runs 3 instances = 2 replicas
+          expr: max by (job) (cnpg_pg_replication_streaming_replicas) < 2
+          for: 10m
+          labels: {severity: warning}
+          annotations:
+            summary: "Postgres {{ $labels.job }} has only {{ $value }} streaming replica(s)"
+            description: "kubectl -n databases get cluster,pods; a failover or a stuck replica on a dead node (local-path)"
+        - alert: CNPGReplicationLag
+          expr: max by (job, pod) (cnpg_pg_replication_lag) > 300
+          for: 10m
+          labels: {severity: warning}
+          annotations:
+            summary: "Postgres {{ $labels.job }} replica {{ $labels.pod }} is {{ $value | humanizeDuration }} behind"
+        - alert: CNPGWALArchivingFailing
+          expr: increase(cnpg_pg_stat_archiver_failed_count[15m]) > 0
+          for: 15m
+          labels: {severity: critical}
+          annotations:
+            summary: "Postgres {{ $labels.job }} cannot archive WAL to S3"
+            description: "Point-in-time recovery is broken and pg_wal will grow. Check the plugin sidecar logs: kubectl -n databases logs {{ $labels.pod }} -c plugin-barman-cloud"
+        - alert: CNPGWALArchivingStalled
+          # archive_timeout forces a WAL switch every 5 min, so a quiet DB still archives regularly
+          expr: max by (job) (cnpg_pg_stat_archiver_seconds_since_last_archival) > 1800
+          for: 10m
+          labels: {severity: warning}
+          annotations:
+            summary: "Postgres {{ $labels.job }} hasn't archived WAL in {{ $value | humanizeDuration }}"
+        - alert: CNPGBackupStale
+          expr: time() - max by (job) (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp) > 26 * 3600
+          for: 30m
+          labels: {severity: warning}
+          annotations:
+            summary: "Postgres {{ $labels.job }}: last successful base backup was {{ $value | humanizeDuration }} ago"
+            description: "kubectl -n databases get backups"
+        - alert: CNPGBackupFailed
+          expr: |
+            max by (job) (barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp)
+              > max by (job) (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp)
+          for: 5m
+          labels: {severity: warning}
+          annotations:
+            summary: "Postgres {{ $labels.job }}: the most recent base backup failed"
+            description: "kubectl -n databases get backups; kubectl -n databases describe backup <name>"

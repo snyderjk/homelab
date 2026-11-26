@@ -99,3 +99,25 @@
               - label: Last run
                 query: time() - max(kube_cronjob_status_last_successful_time{namespace="renovate",cronjob="renovate"})
                 format: {type: duration}
+
+- Monitoring:
+    - Postgres:
+        href: https://grafana.snyderhomelab.com/d/cloudnative-pg
+        icon: postgres.png
+        description: pg-main (CNPG, 3 instances)
+        widget:
+          type: prometheusmetric
+          url: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+          refreshInterval: 30000
+          metrics:
+            - label: Instances up
+              query: sum(cnpg_collector_up{job="databases/pg-main"})
+            - label: Max lag
+              query: max(cnpg_pg_replication_lag{job="databases/pg-main"}) or vector(0)
+              format: {type: duration}
+            - label: Last backup
+              query: time() - max(barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{job="databases/pg-main"})
+              format: {type: duration}
+            - label: DB size
+              query: sum(cnpg_pg_database_size_bytes{job="databases/pg-main"}) / count(cnpg_collector_up{job="databases/pg-main"})
+              format: {type: bytes}
