@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: renovate
+spec:
+  schedule: "15 */2 * * *" # every 2h, so dashboard checkboxes are picked up reasonably fast
+  timeZone: America/Chicago
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 3000 # installation token lives 1h
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 12021
+            runAsGroup: 12021
+            seccompProfile: {type: RuntimeDefault}
+          containers:
+            - name: renovate
+              image: ghcr.io/renovatebot/renovate:44.264.0
+              # image entrypoint (containerbase) stays; it execs these args
+              args: ["bash", "-ec", "eval \"$(node /scripts/token.js)\"; exec renovate"]
+              env:
+                - {name: RENOVATE_PLATFORM, value: github}
+                - {name: RENOVATE_REPOSITORIES, value: snyderjk/homelab}
+                - {name: RENOVATE_PLATFORM_COMMIT, value: enabled} # commits via API -> GitHub-signed, "Verified"
+                - {name: RENOVATE_REQUIRE_CONFIG, value: required}
+                - {name: RENOVATE_ONBOARDING, value: "false"}
+                - {name: RENOVATE_BASE_DIR, value: /tmp/renovate}
+                - {name: RENOVATE_REPOSITORY_CACHE, value: enabled}
+                - {name: HOME, value: /tmp}
+                - {name: LOG_LEVEL, value: info}
+                - {name: LOG_FORMAT, value: json} # -> Loki via Alloy
+              envFrom:
+                - secretRef: {name: renovate-github-app}
+              resources:
+                requests: {cpu: 200m, memory: 512Mi}
+                limits: {memory: 2Gi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                - {name: tmp, mountPath: /tmp}
+                - {name: scripts, mountPath: /scripts, readOnly: true}
+          volumes:
+            - name: tmp
+              emptyDir: {sizeLimit: 4Gi}
+            - name: scripts
+              configMap: {name: renovate-scripts}

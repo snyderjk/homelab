@@ -1,0 +1,96 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "timezone": "America/Chicago",
+  "dependencyDashboardTitle": "Renovate dependency dashboard",
+  "labels": [
+    "renovate"
+  ],
+  "prConcurrentLimit": 10,
+  "prHourlyLimit": 0,
+  "argocd": {
+    "managerFilePatterns": [
+      "/^kubernetes/argocd/.+\\.ya?ml$/",
+      "/^kubernetes/bootstrap/.+\\.ya?ml$/"
+    ]
+  },
+  "kubernetes": {
+    "managerFilePatterns": [
+      "/^kubernetes/.+\\.ya?ml$/"
+    ]
+  },
+  "helm-values": {
+    "managerFilePatterns": [
+      "/^kubernetes/.+/values\\.ya?ml$/"
+    ]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^talos/talconfig\\.yaml$/"
+      ],
+      "datasourceTemplate": "github-releases",
+      "description": "Talos version in talconfig (nothing changes on nodes until talhelper genconfig + talosctl upgrade)",
+      "matchStrings": [
+        "talosVersion:\\s*(?<currentValue>v\\S+)"
+      ],
+      "depNameTemplate": "siderolabs/talos"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^talos/talconfig\\.yaml$/"
+      ],
+      "datasourceTemplate": "github-releases",
+      "description": "Kubernetes version in talconfig (applied with talosctl upgrade-k8s)",
+      "matchStrings": [
+        "kubernetesVersion:\\s*(?<currentValue>v\\S+)"
+      ],
+      "depNameTemplate": "kubernetes/kubernetes"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Talos node OS + talosctl images move together",
+      "matchPackageNames": [
+        "siderolabs/talos",
+        "ghcr.io/siderolabs/talosctl"
+      ],
+      "groupName": "Talos"
+    },
+    {
+      "description": "Cluster-level upgrades need a human plan: only open when ticked on the dashboard",
+      "matchPackageNames": [
+        "siderolabs/talos",
+        "ghcr.io/siderolabs/talosctl",
+        "kubernetes/kubernetes"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor"
+      ],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Major chart/app versions: dashboard approval first",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Group the monitoring stack",
+      "matchPackageNames": [
+        "kube-prometheus-stack",
+        "loki",
+        "alloy",
+        "/^grafana\\//",
+        "/^timberio\\/vector/"
+      ],
+      "groupName": "monitoring stack"
+    }
+  ]
+}

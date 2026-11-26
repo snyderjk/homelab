@@ -1,0 +1,18 @@
+# Self-hosted Renovate: opens dependency PRs on snyderjk/homelab as a GitHub App.
+# Repo config: /renovate.json. Dashboard: the "Renovate dependency dashboard" issue.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: renovate
+labels:
+  - pairs:
+      app.kubernetes.io/name: renovate
+    includeSelectors: true
+resources:
+  - namespace.yaml
+  - externalsecret.yaml
+  - cronjob.yaml
+  - networkpolicy.yaml
+configMapGenerator:
+  - name: renovate-scripts
+    files:
+      - scripts/token.js

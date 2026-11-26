@@ -1,0 +1,17 @@
+# Alerts for kubernetes/apps/renovate (CronJob every 2h)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: renovate
+  namespace: monitoring
+spec:
+  groups:
+    - name: renovate
+      rules:
+        - alert: RenovateFailing
+          expr: time() - kube_cronjob_status_last_successful_time{namespace="renovate",cronjob="renovate"} > 8 * 3600
+          for: 15m
+          labels: {severity: warning}
+          annotations:
+            summary: "Renovate hasn't completed a run in {{ $value | humanizeDuration }}"
+            description: 'Logs: Grafana Explore {namespace="renovate"}, or kubectl -n renovate logs job/<latest>'
