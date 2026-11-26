@@ -2,7 +2,7 @@
 # Topology: 3 schedulable control planes + 1 worker, Cilium (kube-proxy replacement)
 clusterName: homelab
 talosVersion: v1.14.5
-kubernetesVersion: v1.37.2
+kubernetesVersion: v1.37.3
 
 # Shared control-plane VIP (Talos-managed, floats between CP nodes on VLAN 77).
 # Make sure 10.77.1.5 is outside your DHCP range and unused.
