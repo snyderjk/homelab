@@ -39,7 +39,7 @@ spec:
                 - {name: backup, mountPath: /backup}
           containers:
             - name: rotate
-              image: busybox:1.37.0
+              image: busybox:1.38.0
               securityContext: *sc
               command: ["/bin/sh", "-ec"]
               args:
