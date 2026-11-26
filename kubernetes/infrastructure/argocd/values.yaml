@@ -13,6 +13,11 @@ configs:
     # Default in Argo CD 3.x, pinned explicitly: tracks ownership via annotation,
     # so operator-copied labels (e.g. CiliumIdentity) don't confuse Argo
     application.resourceTrackingMethod: annotation
+    # Read-only API-key account for the Homepage widget (token: README / Vault homepage/argocd)
+    accounts.homepage: apiKey
+  rbac:
+    policy.csv: |
+      g, homepage, role:readonly
 
 # No SSO yet (Keycloak comes later) — local admin only
 dex:
@@ -30,6 +35,9 @@ server:
       gethomepage.dev/icon: "argo-cd.png"
       gethomepage.dev/description: "GitOps"
       gethomepage.dev/pod-selector: "app.kubernetes.io/name=argocd-server"
+      gethomepage.dev/widget.type: "argocd"
+      gethomepage.dev/widget.url: "http://argocd-server.argocd.svc"
+      gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_ARGOCD_KEY}}"
     parentRefs:
       - name: homelab
         namespace: istio-ingress

@@ -11,3 +11,67 @@
         icon: synology.png
         description: DSM (LAN / VPN)
         siteMonitor: https://nas.snyderhomelab.com:5001  # direct; file. goes via the gateway
+
+# Monitoring tiles backed by PromQL (prometheusmetric shows at most 4 metrics each).
+# These merge into the "Monitoring" group next to the annotated Grafana/Prometheus tiles.
+- Monitoring:
+    - Alertmanager:
+        href: https://alertmanager.snyderhomelab.com
+        icon: alertmanager.png
+        description: Alerts -> Pushover (LAN / VPN)
+        namespace: monitoring
+        app: alertmanager
+        podSelector: app.kubernetes.io/name=alertmanager
+        widget:
+          type: prometheusmetric
+          url: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+          refreshInterval: 30000
+          metrics:
+            - label: Firing
+              query: count(ALERTS{alertstate="firing",alertname!~"Watchdog|InfoInhibitor"}) or vector(0)
+            - label: Critical
+              query: count(ALERTS{alertstate="firing",severity="critical"}) or vector(0)
+            - label: Warning
+              query: count(ALERTS{alertstate="firing",severity="warning"}) or vector(0)
+            - label: Silenced
+              query: max(alertmanager_silences{state="active"}) or vector(0)
+    - Cluster health:
+        href: https://grafana.snyderhomelab.com
+        icon: mdi-kubernetes
+        description: Pods, etcd, logs
+        widget:
+          type: prometheusmetric
+          url: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+          refreshInterval: 30000
+          metrics:
+            - label: Unhealthy pods
+              query: sum(kube_pod_status_phase{phase=~"Pending|Failed|Unknown"})
+            - label: Restarts (1h)
+              query: round(sum(increase(kube_pod_container_status_restarts_total[1h])))
+            - label: etcd DB
+              query: max(etcd_mvcc_db_total_size_in_bytes)
+              format: {type: bytes}
+            - label: Log lines
+              query: sum(rate(loki_distributor_lines_received_total[5m]))
+              format: {type: number, suffix: /s, options: {maximumFractionDigits: 1}}
+    - GPU:
+        href: https://grafana.snyderhomelab.com/d/homelab-gpu
+        icon: nvidia.png
+        description: RTX 3060 on gpu01
+        widget:
+          type: prometheusmetric
+          url: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+          refreshInterval: 15000
+          metrics:
+            - label: Util
+              query: max(DCGM_FI_DEV_GPU_UTIL_RATIO)
+              format: {type: percent, scale: 100}
+            - label: VRAM
+              query: sum(DCGM_FI_DEV_FB_USED_BYTES)/sum(DCGM_FI_DEV_FB_CAPACITY_BYTES)
+              format: {type: percent, scale: 100, options: {maximumFractionDigits: 0}}
+            - label: Temp
+              query: max(DCGM_FI_DEV_GPU_TEMP_CELSIUS)
+              format: {type: number, suffix: °C}
+            - label: Power
+              query: max(DCGM_FI_DEV_BOARD_POWER_WATTS)
+              format: {type: number, suffix: W, options: {maximumFractionDigits: 0}}

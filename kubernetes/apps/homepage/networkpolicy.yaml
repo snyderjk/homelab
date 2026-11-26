@@ -50,6 +50,13 @@ spec:
       toPorts:
         - ports:
             - {port: "9090", protocol: TCP}
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: argocd
+            app.kubernetes.io/name: argocd-server
+      toPorts:
+        - ports:
+            - {port: "8080", protocol: TCP}
     - toCIDR: [10.17.1.1/32, 10.17.1.5/32]
       toPorts:
         - ports:
