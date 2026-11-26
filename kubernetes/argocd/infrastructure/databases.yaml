@@ -1,0 +1,26 @@
+# Shared Postgres cluster(s) + S3 backups. Needs cnpg + cnpg-barman-plugin CRDs.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: databases
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/snyderjk/homelab
+    targetRevision: main
+    path: kubernetes/infrastructure/databases
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: databases
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+    retry:
+      limit: 10
+      backoff: {duration: 15s, factor: 2, maxDuration: 5m}

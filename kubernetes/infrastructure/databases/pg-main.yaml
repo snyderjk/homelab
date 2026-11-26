@@ -1,0 +1,77 @@
+# pg-main: shared Postgres for homelab apps (each app gets its own database + role).
+# 3 instances on local NVMe (local-path), one per node; CNPG handles replication + failover.
+# Connect: pg-main-rw.databases.svc:5432 (primary), pg-main-ro (replicas).
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pg-main
+  namespace: databases
+spec:
+  instances: 3
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.7-standard-trixie
+  primaryUpdateStrategy: unsupervised
+  storage:
+    storageClass: local-path
+    size: 20Gi
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: required
+    topologyKey: kubernetes.io/hostname
+  resources:
+    requests: {cpu: 100m, memory: 512Mi}
+    limits: {memory: 1Gi}
+  postgresql:
+    parameters:
+      shared_buffers: 256MB
+      max_connections: "200"
+  # Continuous WAL archiving + base backups via the Barman Cloud plugin -> S3
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: pg-main-s3
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: pg-main-s3
+  namespace: databases
+spec:
+  retentionPolicy: "30d" # point-in-time recovery window; CNPG deletes older backups/WAL
+  configuration:
+    destinationPath: s3://cnpg-homelab-backups-840296800572/ # -> .../pg-main/
+    s3Credentials:
+      accessKeyId: {name: cnpg-s3, key: ACCESS_KEY_ID}
+      secretAccessKey: {name: cnpg-s3, key: ACCESS_SECRET_KEY}
+      region: {name: cnpg-s3, key: AWS_REGION}
+    wal:
+      compression: gzip
+    data:
+      compression: gzip
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: pg-main-daily
+  namespace: databases
+spec:
+  schedule: "0 0 9 * * *" # 6-field cron, UTC -> 03:00 Central
+  immediate: true # take the first one as soon as the cluster is up
+  backupOwnerReference: self
+  cluster:
+    name: pg-main
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: pg-main
+  namespace: databases
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: pg-main
+  podMetricsEndpoints:
+    - port: metrics

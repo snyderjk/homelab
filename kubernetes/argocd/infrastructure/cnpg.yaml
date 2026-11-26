@@ -1,0 +1,37 @@
+# CloudNativePG operator (Postgres clusters as CRDs). Clusters live in kubernetes/infrastructure/databases.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cnpg
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3" # after kube-prometheus-stack (PodMonitor CRD)
+spec:
+  project: default
+  sources:
+    - repoURL: https://cloudnative-pg.github.io/charts
+      chart: cloudnative-pg
+      targetRevision: 0.29.2
+      helm:
+        releaseName: cnpg
+        valueFiles:
+          - $values/kubernetes/infrastructure/cnpg/values.yaml
+    - repoURL: https://github.com/snyderjk/homelab
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cnpg-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    managedNamespaceMetadata:
+      labels:
+        pod-security.kubernetes.io/enforce: restricted
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true # CRDs too large for client-side apply
+    retry:
+      limit: 5
+      backoff: {duration: 15s, factor: 2, maxDuration: 3m}

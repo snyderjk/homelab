@@ -1,0 +1,8 @@
+# cloudnative-pg operator chart values
+monitoring:
+  podMonitorEnabled: true # operator metrics
+  grafanaDashboard:
+    create: true # ConfigMap with grafana_dashboard: "1" (Grafana sidecar watches all namespaces)
+resources:
+  requests: {cpu: 50m, memory: 128Mi}
+  limits: {memory: 512Mi}
