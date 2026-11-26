@@ -11,7 +11,7 @@ spec:
     # Standard-channel CRDs. Pinned to the version Istio is built against
     # (istio 1.30.x go.mod: sigs.k8s.io/gateway-api v1.5.1) — bump together with Istio.
     repoURL: https://github.com/kubernetes-sigs/gateway-api
-    targetRevision: v1.5.1
+    targetRevision: v1.7.0
     path: config/crd/standard
   destination:
     server: https://kubernetes.default.svc
