@@ -29,6 +29,14 @@ spec:
         - ports:
             - {port: "53", protocol: UDP}
             - {port: "53", protocol: TCP}
+          rules:
+            dns: # DNS proxy visibility, required for toFQDNs below
+              - matchPattern: "*"
+    - toFQDNs:
+        - matchName: api.github.com # Renovate tile (open PR count)
+      toPorts:
+        - ports:
+            - {port: "443", protocol: TCP}
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: pihole

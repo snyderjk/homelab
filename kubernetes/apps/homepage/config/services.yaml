@@ -75,3 +75,24 @@
             - label: Power
               query: max(DCGM_FI_DEV_BOARD_POWER_WATTS)
               format: {type: number, suffix: W, options: {maximumFractionDigits: 0}}
+
+- Cluster:
+    - Renovate:
+        href: https://github.com/snyderjk/homelab/issues/11
+        icon: renovate.png
+        description: Dependency PRs (dashboard issue)
+        widgets:
+          # GitHub search API, unauthenticated (10 req/min limit) -> refresh every 10 min
+          - type: customapi
+            url: https://api.github.com/search/issues?q=repo:snyderjk/homelab+is:pr+is:open+author:app/snyder-homelab-renovate
+            refreshInterval: 600000
+            mappings:
+              - field: total_count
+                label: Open PRs
+          - type: prometheusmetric
+            url: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+            refreshInterval: 60000
+            metrics:
+              - label: Last run
+                query: time() - max(kube_cronjob_status_last_successful_time{namespace="renovate",cronjob="renovate"})
+                format: {type: duration}
