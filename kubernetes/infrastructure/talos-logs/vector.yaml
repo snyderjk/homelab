@@ -76,7 +76,7 @@ spec:
         - operator: Exists                # every node, incl. the tainted GPU node
       containers:
         - name: vector
-          image: docker.io/timberio/vector:0.61.0-alpine
+          image: docker.io/timberio/vector:0.62.0-alpine
           args: [--config, /etc/vector/vector.yaml]
           env:
             - name: NODE_NAME
