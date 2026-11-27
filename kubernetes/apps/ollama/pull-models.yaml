@@ -1,11 +1,14 @@
 # Pulls models into the running server (idempotent: already-present models are a no-op).
-# Edit the list to add/remove; Replace=true makes Argo recreate the (immutable) Job.
+# Edit the list to add/remove. Runs as a PostSync hook: Argo deletes and recreates it after
+# every sync instead of diffing it (Job templates are immutable, so an image bump made the
+# server-side diff fail with "field is immutable" and blocked the whole app).
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: ollama-pull-models
   annotations:
-    argocd.argoproj.io/sync-options: Replace=true,Force=true
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   backoffLimit: 10 # the server may still be starting / pulling its image
   template:
