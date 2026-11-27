@@ -29,6 +29,12 @@ securityContext:
 # Roll agent/operator pods automatically when cilium-config changes, so config
 # changes pushed through Argo take effect without a manual rollout restart.
 rollOutCiliumPods: true
+# One node at a time (chart default 2), so a bad agent stops the rollout after one node.
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 0
+    maxUnavailable: 1
 operator:
   replicas: 2
   rollOutPods: true
