@@ -22,7 +22,7 @@ spec:
             seccompProfile: {type: RuntimeDefault}
           containers:
             - name: renovate
-              image: ghcr.io/renovatebot/renovate:44.264.0
+              image: ghcr.io/renovatebot/renovate:44.264.1
               # image entrypoint (containerbase) stays; it execs these args
               args: ["bash", "-ec", "eval \"$(node /scripts/token.js)\"; exec renovate"]
               env:
