@@ -37,7 +37,7 @@ spec:
             seccompProfile: {type: RuntimeDefault}
           initContainers:
             - name: snapshot
-              image: hashicorp/vault:2.2.1
+              image: hashicorp/vault:2.2.2
               command: ["/bin/sh", "-ec"]
               args:
                 - |
@@ -65,7 +65,7 @@ spec:
                 - {name: tmp, mountPath: /tmp}
           containers:
             - name: upload
-              image: amazon/aws-cli:2.39.3
+              image: amazon/aws-cli:2.42.4
               command: ["/bin/sh", "-ec"]
               args:
                 - |

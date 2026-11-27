@@ -24,7 +24,7 @@ spec:
               app.kubernetes.io/name: status
       containers:
         - name: status
-          image: python:3.14.9-alpine3.24
+          image: python:3.15.2-alpine3.24
           command: ["python", "-u", "/app/server.py"]
           env:
             - name: PYTHONDONTWRITEBYTECODE
